@@ -4,14 +4,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { mockSubmissions } from "@/data/mockData";
+import { mockSubmissions, type Submission } from "@/data/mockData";
+import { toast } from "@/hooks/use-toast";
 
 export function AdminGrading() {
-  const [selectedId, setSelectedId] = useState(mockSubmissions[0].id);
+  const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
+  const [selectedId, setSelectedId] = useState(submissions[0]?.id);
   const [score, setScore] = useState("");
   const [feedback, setFeedback] = useState("");
 
-  const selectedSubmission = mockSubmissions.find((s) => s.id === selectedId);
+  const selectedSubmission = submissions.find((s) => s.id === selectedId);
+
+  const handleSubmitGrade = () => {
+    const numScore = parseFloat(score);
+    if (isNaN(numScore) || numScore < 0 || numScore > 10) {
+      toast({
+        title: "Invalid Score",
+        description: "Please enter a score between 0 and 10",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!feedback.trim()) {
+      toast({
+        title: "Feedback Required",
+        description: "Please provide feedback for the delegate",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmissions((prev) =>
+      prev.map((s) =>
+        s.id === selectedId
+          ? { ...s, graded: true, score: numScore, feedback: feedback.trim() }
+          : s
+      )
+    );
+
+    toast({
+      title: "Grade Submitted",
+      description: `Successfully graded ${selectedSubmission?.name}'s submission`,
+    });
+
+    setScore("");
+    setFeedback("");
+  };
 
   return (
     <div className="animate-fade-in h-[calc(100vh-8rem)]">
@@ -30,12 +69,12 @@ export function AdminGrading() {
           <div className="p-4 border-b border-border bg-muted/30">
             <h3 className="subsection-heading">Submissions</h3>
             <p className="text-sm text-muted-foreground">
-              {mockSubmissions.filter((s) => !s.graded).length} pending review
+              {submissions.filter((s) => !s.graded).length} pending review
             </p>
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {mockSubmissions.map((submission) => (
+            {submissions.map((submission) => (
               <button
                 key={submission.id}
                 onClick={() => setSelectedId(submission.id)}
@@ -146,7 +185,7 @@ export function AdminGrading() {
                       />
                     </div>
                     <div className="col-span-2 flex items-end">
-                      <Button className="w-full">Submit</Button>
+                      <Button className="w-full" onClick={handleSubmitGrade}>Submit</Button>
                     </div>
                   </div>
                 </div>
