@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
-import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { AlertCircle, CheckCircle2, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSubmissions } from "@/hooks/useSubmissions";
+import { toast } from "@/hooks/use-toast";
 
 const MAX_CHARACTERS = 1500;
 
@@ -14,11 +16,22 @@ const FIRST_PERSON_PATTERNS = FORBIDDEN_WORDS.map(
 );
 
 export function DelegateSpeech() {
-  const [speech, setSpeech] = useState(
-    `The delegation of Germany rises to address this distinguished body on a matter of utmost importance.
+  const { submissions, loading, createSubmission, updateSubmission } = useSubmissions();
+  const [speech, setSpeech] = useState("");
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-Germany firmly believes that sustainable development cannot be achieved without addressing climate change. The German delegation calls upon all member states to honor their commitments.`
-  );
+  // Load existing draft or submitted speech
+  useEffect(() => {
+    const existingSpeech = submissions.find(
+      (s) => s.submission_type === "speech" && (s.status === "draft" || s.status === "submitted")
+    );
+    if (existingSpeech) {
+      setSpeech(existingSpeech.content);
+      setCurrentSubmissionId(existingSpeech.id);
+    }
+  }, [submissions]);
 
   const characterCount = speech.length;
   const characterPercentage = (characterCount / MAX_CHARACTERS) * 100;
@@ -57,6 +70,95 @@ Germany firmly believes that sustainable development cannot be achieved without 
 
   const isValid = violationCount === 0;
 
+  const handleSaveDraft = async () => {
+    if (!speech.trim()) {
+      toast({
+        title: "Empty Speech",
+        description: "Please write something before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (currentSubmissionId) {
+        await updateSubmission(currentSubmissionId, { content: speech });
+      } else {
+        const newSubmission = await createSubmission(
+          "Current Delegate", // TODO: Replace with actual delegate name
+          "Germany", // TODO: Replace with actual country
+          "speech",
+          speech,
+          "draft"
+        );
+        setCurrentSubmissionId(newSubmission.id);
+      }
+      toast({
+        title: "Draft Saved",
+        description: "Your speech has been saved as a draft",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save draft",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmitSpeech = async () => {
+    if (!isValid || characterCount > MAX_CHARACTERS) return;
+
+    setSubmitting(true);
+    try {
+      if (currentSubmissionId) {
+        await updateSubmission(currentSubmissionId, {
+          content: speech,
+          status: "submitted",
+          submitted_at: new Date().toISOString(),
+        });
+      } else {
+        const newSubmission = await createSubmission(
+          "Current Delegate",
+          "Germany",
+          "speech",
+          speech,
+          "submitted"
+        );
+        setCurrentSubmissionId(newSubmission.id);
+      }
+      toast({
+        title: "Speech Submitted",
+        description: "Your opening speech has been submitted for review",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit speech",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Check if already submitted
+  const existingSubmission = submissions.find(
+    (s) => s.id === currentSubmissionId
+  );
+  const isSubmitted = existingSubmission?.status === "submitted" || existingSubmission?.status === "graded";
+
   return (
     <div className="animate-fade-in max-w-4xl mx-auto">
       {/* Header */}
@@ -66,6 +168,21 @@ Germany firmly believes that sustainable development cannot be achieved without 
           Write your opening speech in third person
         </p>
       </div>
+
+      {/* Grading Feedback (if graded) */}
+      {existingSubmission?.status === "graded" && (
+        <div className="diplomatic-card p-4 mb-6 bg-success/10 border-success/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium text-success">Graded</span>
+            <span className="text-2xl font-heading font-semibold text-success">
+              {existingSubmission.score}/10
+            </span>
+          </div>
+          {existingSubmission.feedback && (
+            <p className="text-sm text-muted-foreground">{existingSubmission.feedback}</p>
+          )}
+        </div>
+      )}
 
       {/* Status Indicators */}
       <div className="grid grid-cols-2 gap-4 mb-6">
@@ -173,6 +290,7 @@ Germany firmly believes that sustainable development cannot be achieved without 
             placeholder="Begin your opening speech here..."
             className="w-full min-h-[350px] p-6 text-base leading-relaxed resize-none bg-transparent focus:outline-none focus:ring-0 border-0 text-foreground"
             style={{ caretColor: "currentColor" }}
+            disabled={isSubmitted}
           />
 
           {/* Highlighted overlay (read-only, behind textarea) */}
@@ -184,10 +302,25 @@ Germany firmly believes that sustainable development cannot be achieved without 
         </div>
 
         <div className="p-4 border-t border-border flex justify-end gap-3 bg-muted/30">
-          <Button variant="outline">Save Draft</Button>
-          <Button disabled={!isValid || characterCount > MAX_CHARACTERS}>
-            Submit Speech
-          </Button>
+          {!isSubmitted ? (
+            <>
+              <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Draft
+              </Button>
+              <Button
+                disabled={!isValid || characterCount > MAX_CHARACTERS || submitting}
+                onClick={handleSubmitSpeech}
+              >
+                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Submit Speech
+              </Button>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              Speech has been submitted
+            </span>
+          )}
         </div>
       </div>
     </div>

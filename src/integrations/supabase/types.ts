@@ -94,6 +94,51 @@ export type Database = {
           },
         ]
       }
+      submissions: {
+        Row: {
+          content: string
+          country: string
+          created_at: string
+          delegate_name: string
+          feedback: string | null
+          graded_at: string | null
+          id: string
+          score: number | null
+          status: Database["public"]["Enums"]["submission_status"]
+          submission_type: Database["public"]["Enums"]["submission_type"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          country: string
+          created_at?: string
+          delegate_name: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          submission_type?: Database["public"]["Enums"]["submission_type"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          country?: string
+          created_at?: string
+          delegate_name?: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          submission_type?: Database["public"]["Enums"]["submission_type"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -102,7 +147,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      submission_status: "draft" | "submitted" | "graded"
+      submission_type:
+        | "speech"
+        | "position_paper"
+        | "resolution_draft"
+        | "amendment"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -229,6 +279,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      submission_status: ["draft", "submitted", "graded"],
+      submission_type: [
+        "speech",
+        "position_paper",
+        "resolution_draft",
+        "amendment",
+      ],
+    },
   },
 } as const
