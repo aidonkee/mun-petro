@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Plus, Eye, Edit, Trash2, Save, X } from "lucide-react";
+import { Settings, Plus, Eye, Edit, Trash2, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -19,135 +19,99 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-
-interface QuizQuestion {
-  id: number;
-  question: string;
-  type: "multiple_choice" | "true_false";
-  options: string[];
-  correctAnswer: number;
-  status: "active" | "inactive";
-}
-
-interface QuizConfig {
-  topic: string;
-  description: string;
-  isActive: boolean;
-  showAnswers: boolean;
-  allowRetakes: boolean;
-  timeLimit: number;
-  passingScore: number;
-}
+import { useQuizData, QuizQuestion } from "@/hooks/useQuizData";
 
 export function QuizSettings() {
-  const { toast } = useToast();
-  
-  const [config, setConfig] = useState<QuizConfig>({
-    topic: "MUN Rules of Procedure",
-    description: "Test your knowledge of Model UN parliamentary procedures",
-    isActive: true,
-    showAnswers: true,
-    allowRetakes: true,
-    timeLimit: 30,
-    passingScore: 70,
-  });
-
-  const [questions, setQuestions] = useState<QuizQuestion[]>([
-    {
-      id: 1,
-      question: "What motion takes precedence over all others during formal debate?",
-      type: "multiple_choice",
-      options: ["Motion to Adjourn", "Point of Order", "Motion to Close Debate", "Motion to Suspend"],
-      correctAnswer: 1,
-      status: "active",
-    },
-    {
-      id: 2,
-      question: "Which clause type uses italicized phrases and ends with a comma?",
-      type: "multiple_choice",
-      options: ["Operative Clause", "Preambulatory Clause", "Amendment Clause", "Signature Clause"],
-      correctAnswer: 1,
-      status: "active",
-    },
-  ]);
+  const { config, questions, loading, updateConfig, addQuestion, updateQuestion, deleteQuestion } = useQuizData();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(null);
   const [viewingQuestion, setViewingQuestion] = useState<QuizQuestion | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [newQuestion, setNewQuestion] = useState({
     question: "",
     type: "multiple_choice" as "multiple_choice" | "true_false",
     options: ["", "", "", ""],
     correctAnswer: 0,
+    explanation: "",
   });
 
-  const handleAddQuestion = () => {
-    if (!newQuestion.question.trim()) {
-      toast({ title: "Error", description: "Please enter a question", variant: "destructive" });
-      return;
-    }
+  const handleAddQuestion = async () => {
+    if (!newQuestion.question.trim()) return;
 
-    const validOptions = newQuestion.type === "true_false" 
-      ? ["True", "False"] 
-      : newQuestion.options.filter(o => o.trim());
-    
-    if (newQuestion.type === "multiple_choice" && validOptions.length < 2) {
-      toast({ title: "Error", description: "Please enter at least 2 answer options", variant: "destructive" });
-      return;
-    }
+    const validOptions = newQuestion.type === "true_false"
+      ? ["True", "False"]
+      : newQuestion.options.filter((o) => o.trim());
 
-    const question: QuizQuestion = {
-      id: Date.now(),
+    if (newQuestion.type === "multiple_choice" && validOptions.length < 2) return;
+
+    await addQuestion({
       question: newQuestion.question,
-      type: newQuestion.type,
+      question_type: newQuestion.type,
       options: validOptions,
-      correctAnswer: newQuestion.correctAnswer,
-      status: "active",
-    };
+      correct_answer: newQuestion.correctAnswer,
+      explanation: newQuestion.explanation || null,
+    });
 
-    setQuestions([...questions, question]);
-    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0 });
+    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0, explanation: "" });
     setIsAddDialogOpen(false);
-    toast({ title: "Success", description: "Question added successfully" });
   };
 
-  const handleEditQuestion = () => {
+  const handleEditQuestion = async () => {
     if (!editingQuestion) return;
 
-    const validOptions = editingQuestion.type === "true_false"
+    const validOptions = editingQuestion.question_type === "true_false"
       ? ["True", "False"]
-      : editingQuestion.options.filter(o => o.trim());
+      : editingQuestion.options.filter((o) => o.trim());
 
-    setQuestions(questions.map(q => 
-      q.id === editingQuestion.id 
-        ? { ...editingQuestion, options: validOptions }
-        : q
-    ));
+    await updateQuestion(editingQuestion.id, {
+      question: editingQuestion.question,
+      question_type: editingQuestion.question_type,
+      options: validOptions,
+      correct_answer: editingQuestion.correct_answer,
+      explanation: editingQuestion.explanation,
+    });
+
     setIsEditDialogOpen(false);
     setEditingQuestion(null);
-    toast({ title: "Success", description: "Question updated successfully" });
   };
 
-  const handleDeleteQuestion = (id: number) => {
-    setQuestions(questions.filter(q => q.id !== id));
-    toast({ title: "Deleted", description: "Question removed" });
+  const handleDeleteQuestion = async (id: string) => {
+    await deleteQuestion(id);
   };
 
-  const handleToggleStatus = (id: number) => {
-    setQuestions(questions.map(q => 
-      q.id === id 
-        ? { ...q, status: q.status === "active" ? "inactive" : "active" }
-        : q
-    ));
+  const handleSaveConfig = async () => {
+    if (!config) return;
+    setIsSaving(true);
+    await updateConfig({
+      topic: config.topic,
+      description: config.description,
+      time_limit: config.time_limit,
+      passing_score: config.passing_score,
+      is_active: config.is_active,
+      allow_retakes: config.allow_retakes,
+    });
+    setIsSaving(false);
   };
 
-  const handleSaveConfig = () => {
-    toast({ title: "Saved", description: "Quiz configuration updated" });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        No quiz configuration found.
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -185,8 +149,8 @@ export function QuizSettings() {
                 <Select
                   value={newQuestion.type}
                   onValueChange={(value: "multiple_choice" | "true_false") => {
-                    setNewQuestion({ 
-                      ...newQuestion, 
+                    setNewQuestion({
+                      ...newQuestion,
                       type: value,
                       options: value === "true_false" ? ["True", "False"] : ["", "", "", ""],
                       correctAnswer: 0,
@@ -202,7 +166,7 @@ export function QuizSettings() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {newQuestion.type === "multiple_choice" && (
                 <div className="space-y-2">
                   <Label>Answer Options</Label>
@@ -256,6 +220,16 @@ export function QuizSettings() {
                 </div>
               )}
 
+              <div>
+                <Label>Explanation (optional)</Label>
+                <Textarea
+                  value={newQuestion.explanation}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, explanation: e.target.value })}
+                  placeholder="Explain why this answer is correct..."
+                  className="mt-1"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
@@ -284,7 +258,7 @@ export function QuizSettings() {
             <Input
               id="topic"
               value={config.topic}
-              onChange={(e) => setConfig({ ...config, topic: e.target.value })}
+              onChange={(e) => updateConfig({ topic: e.target.value })}
               placeholder="Enter quiz topic..."
               className="mt-1"
             />
@@ -293,8 +267,8 @@ export function QuizSettings() {
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={config.description}
-              onChange={(e) => setConfig({ ...config, description: e.target.value })}
+              value={config.description || ""}
+              onChange={(e) => updateConfig({ description: e.target.value })}
               placeholder="Enter quiz description..."
               className="mt-1"
               rows={2}
@@ -312,8 +286,8 @@ export function QuizSettings() {
             </div>
             <h3 className="subsection-heading">Quiz Configuration</h3>
           </div>
-          <Button size="sm" onClick={handleSaveConfig}>
-            <Save className="w-4 h-4 mr-2" />
+          <Button size="sm" onClick={handleSaveConfig} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Save Settings
           </Button>
         </div>
@@ -324,30 +298,20 @@ export function QuizSettings() {
               <Label htmlFor="quiz-active" className="text-sm">
                 Quiz Active
               </Label>
-              <Switch 
-                id="quiz-active" 
-                checked={config.isActive}
-                onCheckedChange={(checked) => setConfig({ ...config, isActive: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="show-answers" className="text-sm">
-                Show Correct Answers After Submission
-              </Label>
-              <Switch 
-                id="show-answers" 
-                checked={config.showAnswers}
-                onCheckedChange={(checked) => setConfig({ ...config, showAnswers: checked })}
+              <Switch
+                id="quiz-active"
+                checked={config.is_active}
+                onCheckedChange={(checked) => updateConfig({ is_active: checked })}
               />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="allow-retry" className="text-sm">
                 Allow Retakes
               </Label>
-              <Switch 
-                id="allow-retry" 
-                checked={config.allowRetakes}
-                onCheckedChange={(checked) => setConfig({ ...config, allowRetakes: checked })}
+              <Switch
+                id="allow-retry"
+                checked={config.allow_retakes}
+                onCheckedChange={(checked) => updateConfig({ allow_retakes: checked })}
               />
             </div>
           </div>
@@ -360,8 +324,8 @@ export function QuizSettings() {
               <Input
                 id="time-limit"
                 type="number"
-                value={config.timeLimit}
-                onChange={(e) => setConfig({ ...config, timeLimit: Number(e.target.value) })}
+                value={config.time_limit}
+                onChange={(e) => updateConfig({ time_limit: Number(e.target.value) })}
                 className="w-32"
               />
             </div>
@@ -372,8 +336,8 @@ export function QuizSettings() {
               <Input
                 id="pass-score"
                 type="number"
-                value={config.passingScore}
-                onChange={(e) => setConfig({ ...config, passingScore: Number(e.target.value) })}
+                value={config.passing_score}
+                onChange={(e) => updateConfig({ passing_score: Number(e.target.value) })}
                 className="w-32"
               />
             </div>
@@ -405,23 +369,15 @@ export function QuizSettings() {
                     <p className="font-medium">{q.question}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="badge-primary">
-                        {q.type === "multiple_choice" ? "Multiple Choice" : "True/False"}
-                      </span>
-                      <span 
-                        className={q.status === "active" ? "badge-success" : "badge-secondary"}
-                        onClick={() => handleToggleStatus(q.id)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {q.status === "active" ? "Active" : "Inactive"}
+                        {q.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* View Button */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-muted-foreground"
                     onClick={() => {
                       setViewingQuestion(q);
@@ -430,10 +386,9 @@ export function QuizSettings() {
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
-                  {/* Edit Button */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-muted-foreground"
                     onClick={() => {
                       setEditingQuestion({ ...q });
@@ -442,10 +397,9 @@ export function QuizSettings() {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  {/* Delete Button */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="text-muted-foreground hover:text-destructive"
                     onClick={() => handleDeleteQuestion(q.id)}
                   >
@@ -472,19 +426,24 @@ export function QuizSettings() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Type</Label>
-                <p className="mt-1">{viewingQuestion.type === "multiple_choice" ? "Multiple Choice" : "True/False"}</p>
+                <p className="mt-1">{viewingQuestion.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Options</Label>
                 <ul className="mt-1 space-y-1">
-                  {viewingQuestion.options.map((option, i) => (
-                    <li key={i} className={`flex items-center gap-2 ${i === viewingQuestion.correctAnswer ? "text-primary font-medium" : ""}`}>
-                      {i === viewingQuestion.correctAnswer && <span>✓</span>}
-                      {option}
+                  {viewingQuestion.options.map((opt, idx) => (
+                    <li key={idx} className={idx === viewingQuestion.correct_answer ? "text-success font-medium" : ""}>
+                      {String.fromCharCode(65 + idx)}. {opt} {idx === viewingQuestion.correct_answer && "✓"}
                     </li>
                   ))}
                 </ul>
               </div>
+              {viewingQuestion.explanation && (
+                <div>
+                  <Label className="text-muted-foreground">Explanation</Label>
+                  <p className="mt-1 text-sm">{viewingQuestion.explanation}</p>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -509,13 +468,13 @@ export function QuizSettings() {
               <div>
                 <Label>Question Type</Label>
                 <Select
-                  value={editingQuestion.type}
+                  value={editingQuestion.question_type}
                   onValueChange={(value: "multiple_choice" | "true_false") => {
-                    setEditingQuestion({ 
-                      ...editingQuestion, 
-                      type: value,
-                      options: value === "true_false" ? ["True", "False"] : editingQuestion.options.length >= 2 ? editingQuestion.options : ["", "", "", ""],
-                      correctAnswer: 0,
+                    setEditingQuestion({
+                      ...editingQuestion,
+                      question_type: value,
+                      options: value === "true_false" ? ["True", "False"] : editingQuestion.options,
+                      correct_answer: 0,
                     });
                   }}
                 >
@@ -528,8 +487,8 @@ export function QuizSettings() {
                   </SelectContent>
                 </Select>
               </div>
-              
-              {editingQuestion.type === "multiple_choice" && (
+
+              {editingQuestion.question_type === "multiple_choice" && (
                 <div className="space-y-2">
                   <Label>Answer Options</Label>
                   {editingQuestion.options.map((option, index) => (
@@ -537,8 +496,8 @@ export function QuizSettings() {
                       <input
                         type="radio"
                         name="editCorrectAnswer"
-                        checked={editingQuestion.correctAnswer === index}
-                        onChange={() => setEditingQuestion({ ...editingQuestion, correctAnswer: index })}
+                        checked={editingQuestion.correct_answer === index}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, correct_answer: index })}
                         className="w-4 h-4"
                       />
                       <Input
@@ -555,7 +514,7 @@ export function QuizSettings() {
                 </div>
               )}
 
-              {editingQuestion.type === "true_false" && (
+              {editingQuestion.question_type === "true_false" && (
                 <div className="space-y-2">
                   <Label>Correct Answer</Label>
                   <div className="flex gap-4">
@@ -563,8 +522,8 @@ export function QuizSettings() {
                       <input
                         type="radio"
                         name="editTfAnswer"
-                        checked={editingQuestion.correctAnswer === 0}
-                        onChange={() => setEditingQuestion({ ...editingQuestion, correctAnswer: 0 })}
+                        checked={editingQuestion.correct_answer === 0}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, correct_answer: 0 })}
                       />
                       True
                     </label>
@@ -572,8 +531,8 @@ export function QuizSettings() {
                       <input
                         type="radio"
                         name="editTfAnswer"
-                        checked={editingQuestion.correctAnswer === 1}
-                        onChange={() => setEditingQuestion({ ...editingQuestion, correctAnswer: 1 })}
+                        checked={editingQuestion.correct_answer === 1}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, correct_answer: 1 })}
                       />
                       False
                     </label>
@@ -581,9 +540,18 @@ export function QuizSettings() {
                 </div>
               )}
 
+              <div>
+                <Label>Explanation</Label>
+                <Textarea
+                  value={editingQuestion.explanation || ""}
+                  onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
+                  placeholder="Explain why this answer is correct..."
+                  className="mt-1"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
                 <Button onClick={handleEditQuestion}>
