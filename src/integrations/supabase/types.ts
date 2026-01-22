@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      quiz_configs: {
+        Row: {
+          allow_retakes: boolean
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          passing_score: number
+          time_limit: number
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          allow_retakes?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          passing_score?: number
+          time_limit?: number
+          topic?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_retakes?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          passing_score?: number
+          time_limit?: number
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          config_id: string
+          correct_answer: number
+          created_at: string
+          explanation: string | null
+          id: string
+          options: Json
+          order_index: number
+          question: string
+          question_type: string
+        }
+        Insert: {
+          config_id: string
+          correct_answer?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json
+          order_index?: number
+          question: string
+          question_type?: string
+        }
+        Update: {
+          config_id?: string
+          correct_answer?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+          question_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

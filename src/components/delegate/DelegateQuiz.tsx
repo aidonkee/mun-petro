@@ -1,85 +1,56 @@
 import { useState } from "react";
-import { CheckCircle2, XCircle, ChevronRight, RotateCcw } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronRight, RotateCcw, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-}
-
-const questions: Question[] = [
-  {
-    id: 1,
-    question: "What motion takes precedence over all others during formal debate?",
-    options: [
-      "Motion to Adjourn",
-      "Point of Order",
-      "Motion to Appeal the Chair's Decision",
-      "Motion to Suspend the Meeting",
-    ],
-    correctIndex: 1,
-    explanation:
-      "A Point of Order takes precedence as it addresses a procedural violation that must be resolved before debate can continue.",
-  },
-  {
-    id: 2,
-    question: "Which clause type uses italicized phrases and ends with a comma?",
-    options: [
-      "Operative clauses",
-      "Preambulatory clauses",
-      "Amendment clauses",
-      "Signatory clauses",
-    ],
-    correctIndex: 1,
-    explanation:
-      "Preambulatory clauses begin with italicized phrases (e.g., 'Recalling', 'Noting') and end with commas.",
-  },
-  {
-    id: 3,
-    question: "What is the minimum number of sponsors typically required for a working paper?",
-    options: ["1 sponsor", "2 sponsors", "3 sponsors", "5 sponsors"],
-    correctIndex: 0,
-    explanation:
-      "Most MUN conferences require at least 1 sponsor (the main author) for a working paper.",
-  },
-  {
-    id: 4,
-    question: "During an unmoderated caucus, delegates may:",
-    options: [
-      "Only speak through the Chair",
-      "Freely move and discuss informally",
-      "Not leave their seats",
-      "Only write notes to other delegates",
-    ],
-    correctIndex: 1,
-    explanation:
-      "An unmoderated caucus allows delegates to leave their seats and engage in informal discussions.",
-  },
-  {
-    id: 5,
-    question: "What does 'Yield to the Chair' mean at the end of a speech?",
-    options: [
-      "The delegate asks for questions",
-      "The delegate gives remaining time to another delegate",
-      "The delegate forfeits their remaining time",
-      "The delegate requests an extension",
-    ],
-    correctIndex: 2,
-    explanation:
-      "Yielding to the Chair means the delegate gives up any remaining speaking time.",
-  },
-];
+import { useQuizData } from "@/hooks/useQuizData";
 
 export function DelegateQuiz() {
+  const { config, questions, loading } = useQuizData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!config || !config.is_active) {
+    return (
+      <div className="animate-fade-in max-w-2xl mx-auto">
+        <div className="diplomatic-card p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="section-heading mb-2">Quiz Not Available</h2>
+          <p className="text-muted-foreground">
+            The quiz is currently inactive. Please check back later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="animate-fade-in max-w-2xl mx-auto">
+        <div className="diplomatic-card p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h2 className="section-heading mb-2">No Questions Available</h2>
+          <p className="text-muted-foreground">
+            The quiz has no questions yet. Please check back later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentIndex];
 
@@ -91,7 +62,7 @@ export function DelegateQuiz() {
   const handleSubmit = () => {
     if (selectedOption === null) return;
     setHasAnswered(true);
-    if (selectedOption === currentQuestion.correctIndex) {
+    if (selectedOption === currentQuestion.correct_answer) {
       setScore(score + 1);
     }
   };
@@ -107,6 +78,7 @@ export function DelegateQuiz() {
   };
 
   const handleRestart = () => {
+    if (!config.allow_retakes) return;
     setCurrentIndex(0);
     setSelectedOption(null);
     setHasAnswered(false);
@@ -115,7 +87,8 @@ export function DelegateQuiz() {
   };
 
   if (completed) {
-    const percentage = (score / questions.length) * 100;
+    const percentage = Math.round((score / questions.length) * 100);
+    const passed = percentage >= config.passing_score;
 
     return (
       <div className="animate-fade-in max-w-2xl mx-auto">
@@ -123,32 +96,21 @@ export function DelegateQuiz() {
           <div
             className={cn(
               "w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center",
-              percentage >= 80
-                ? "bg-success/10"
-                : percentage >= 60
-                ? "bg-warning/10"
-                : "bg-destructive/10"
+              passed ? "bg-success/10" : "bg-destructive/10"
             )}
           >
-            {percentage >= 80 ? (
+            {passed ? (
               <CheckCircle2 className="w-12 h-12 text-success" />
             ) : (
-              <XCircle
-                className={cn(
-                  "w-12 h-12",
-                  percentage >= 60 ? "text-warning" : "text-destructive"
-                )}
-              />
+              <XCircle className="w-12 h-12 text-destructive" />
             )}
           </div>
 
           <h2 className="section-heading mb-2">Quiz Complete!</h2>
           <p className="text-muted-foreground mb-6">
-            {percentage >= 80
-              ? "Excellent! You have a strong grasp of MUN rules."
-              : percentage >= 60
-              ? "Good effort! Review the rules to improve further."
-              : "Keep studying! The rules will become clearer with practice."}
+            {passed
+              ? "Congratulations! You passed the quiz."
+              : `You need ${config.passing_score}% to pass. Keep studying!`}
           </p>
 
           <div className="text-5xl font-heading font-bold text-secondary mb-2">
@@ -156,10 +118,12 @@ export function DelegateQuiz() {
           </div>
           <p className="text-muted-foreground mb-8">{percentage}% correct</p>
 
-          <Button onClick={handleRestart} className="gap-2">
-            <RotateCcw className="w-4 h-4" />
-            Retake Quiz
-          </Button>
+          {config.allow_retakes && (
+            <Button onClick={handleRestart} className="gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Retake Quiz
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -169,10 +133,8 @@ export function DelegateQuiz() {
     <div className="animate-fade-in max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="section-heading">Rules of Procedure Quiz</h2>
-        <p className="text-muted-foreground mt-1">
-          Test your knowledge of Model UN procedures
-        </p>
+        <h2 className="section-heading">{config.topic}</h2>
+        <p className="text-muted-foreground mt-1">{config.description}</p>
       </div>
 
       {/* Progress */}
@@ -206,7 +168,7 @@ export function DelegateQuiz() {
         <div className="p-6 space-y-3">
           {currentQuestion.options.map((option, index) => {
             const isSelected = selectedOption === index;
-            const isCorrect = index === currentQuestion.correctIndex;
+            const isCorrect = index === currentQuestion.correct_answer;
             const showCorrect = hasAnswered && isCorrect;
             const showWrong = hasAnswered && isSelected && !isCorrect;
 
@@ -246,7 +208,7 @@ export function DelegateQuiz() {
         </div>
 
         {/* Explanation */}
-        {hasAnswered && (
+        {hasAnswered && currentQuestion.explanation && (
           <div className="p-6 border-t border-border bg-accent animate-fade-in">
             <p className="text-sm">
               <span className="font-medium text-secondary">Explanation: </span>
