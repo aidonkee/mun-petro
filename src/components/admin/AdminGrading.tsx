@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useSubmissions, type Submission } from "@/hooks/useSubmissions";
 import { toast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { ResolutionContent } from "@/components/ResolutionContent";
 
 const submissionTypeLabels: Record<string, string> = {
   speech: "Speech",
@@ -192,13 +193,17 @@ export function AdminGrading() {
 
                 {/* Content Area */}
                 <div className="diplomatic-card p-6 flex-1 overflow-y-auto">
-                  <div className="prose prose-sm max-w-none">
-                    {selectedSubmission.content.split("\n\n").map((para, i) => (
-                      <p key={i} className="text-foreground leading-relaxed mb-4">
-                        {para}
-                      </p>
-                    ))}
-                  </div>
+                  {selectedSubmission.submission_type === "resolution_draft" ? (
+                    <ResolutionContent content={selectedSubmission.content} />
+                  ) : (
+                    <div className="prose prose-sm max-w-none">
+                      {selectedSubmission.content.split("\n\n").map((para, i) => (
+                        <p key={i} className="text-foreground leading-relaxed mb-4">
+                          {para}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Grading Inputs */}
