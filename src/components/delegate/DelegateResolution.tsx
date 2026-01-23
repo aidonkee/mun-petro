@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, GripVertical, Eye, ChevronRight, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, GripVertical, Eye, ChevronRight, ChevronLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useSubmissions } from "@/hooks/useSubmissions";
+import { toast } from "@/hooks/use-toast";
+import { currentDelegate } from "@/data/mockData";
 
 const PREAMBULATORY_PHRASES = [
   "Affirming", "Alarmed by", "Aware of", "Bearing in mind", "Believing",
@@ -37,6 +40,7 @@ interface Clause {
 }
 
 export function DelegateResolution() {
+  const { submissions, loading, createSubmission, updateSubmission } = useSubmissions();
   const [step, setStep] = useState<"preamble" | "operative">("preamble");
   const [topic, setTopic] = useState("Climate Action in Developing Nations");
   const [clauses, setClauses] = useState<Clause[]>([
@@ -48,6 +52,114 @@ export function DelegateResolution() {
     },
   ]);
   const [showPreview, setShowPreview] = useState(false);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Load existing draft or submitted resolution
+  useEffect(() => {
+    const existingResolution = submissions.find(
+      (s) => s.submission_type === "resolution_draft" && (s.status === "draft" || s.status === "submitted")
+    );
+    if (existingResolution) {
+      try {
+        const parsed = JSON.parse(existingResolution.content);
+        if (parsed.topic) setTopic(parsed.topic);
+        if (parsed.clauses) setClauses(parsed.clauses);
+        setCurrentSubmissionId(existingResolution.id);
+      } catch {
+        // If content is not JSON, use it as-is
+      }
+    }
+  }, [submissions]);
+
+  const getResolutionContent = () => {
+    return JSON.stringify({ topic, clauses });
+  };
+
+  const handleSaveDraft = async () => {
+    if (!topic.trim() && clauses.length === 0) {
+      toast({
+        title: "Empty Resolution",
+        description: "Please add a topic or clauses before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const content = getResolutionContent();
+      if (currentSubmissionId) {
+        await updateSubmission(currentSubmissionId, { content });
+      } else {
+        const newSubmission = await createSubmission(
+          "Current Delegate",
+          currentDelegate.country,
+          "resolution_draft",
+          content,
+          "draft"
+        );
+        setCurrentSubmissionId(newSubmission.id);
+      }
+      toast({
+        title: "Draft Saved",
+        description: "Your resolution has been saved as a draft",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save draft",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmitResolution = async () => {
+    if (operatives.length === 0) {
+      toast({
+        title: "No Operative Clauses",
+        description: "Please add at least one operative clause before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const content = getResolutionContent();
+      if (currentSubmissionId) {
+        await updateSubmission(currentSubmissionId, {
+          content,
+          status: "submitted",
+          submitted_at: new Date().toISOString(),
+        });
+      } else {
+        const newSubmission = await createSubmission(
+          "Current Delegate",
+          currentDelegate.country,
+          "resolution_draft",
+          content,
+          "submitted"
+        );
+        setCurrentSubmissionId(newSubmission.id);
+      }
+      toast({
+        title: "Resolution Submitted",
+        description: "Your resolution has been submitted for review",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit resolution",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const addClause = (type: "preambulatory" | "operative") => {
     const newClause: Clause = {
@@ -71,6 +183,18 @@ export function DelegateResolution() {
 
   const preambulatories = clauses.filter((c) => c.type === "preambulatory");
   const operatives = clauses.filter((c) => c.type === "operative");
+
+  // Check submission status
+  const existingSubmission = submissions.find((s) => s.id === currentSubmissionId);
+  const isSubmitted = existingSubmission?.status === "submitted" || existingSubmission?.status === "graded";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -207,7 +331,11 @@ export function DelegateResolution() {
                 )}
               </div>
 
-              <div className="p-4 border-t border-border bg-muted/30 flex justify-end">
+              <div className="p-4 border-t border-border bg-muted/30 flex justify-between">
+                <Button variant="outline" onClick={handleSaveDraft} disabled={saving || isSubmitted}>
+                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save Draft
+                </Button>
                 <Button onClick={() => setStep("operative")} className="gap-2">
                   Next: Operative Clauses
                   <ChevronRight className="w-4 h-4" />
@@ -278,11 +406,27 @@ export function DelegateResolution() {
               </div>
 
               <div className="p-4 border-t border-border bg-muted/30 flex justify-between">
-                <Button variant="outline" onClick={() => setStep("preamble")} className="gap-2">
+                <Button variant="outline" onClick={() => setStep("preamble")} className="gap-2" disabled={isSubmitted}>
                   <ChevronLeft className="w-4 h-4" />
                   Back to Preambles
                 </Button>
-                <Button>Submit Resolution</Button>
+                {!isSubmitted ? (
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={handleSaveDraft} disabled={saving}>
+                      {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Save Draft
+                    </Button>
+                    <Button onClick={handleSubmitResolution} disabled={submitting || operatives.length === 0}>
+                      {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Submit Resolution
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-success">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="text-sm font-medium">Resolution Submitted</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
