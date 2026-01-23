@@ -1,14 +1,27 @@
-import { Flag, Mic, FileText, HelpCircle, CheckCircle2, Circle } from "lucide-react";
+import { Flag, Mic, FileText, HelpCircle, CheckCircle2, Circle, ChevronRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { currentDelegate } from "@/data/mockData";
+import { useSubmissions } from "@/hooks/useSubmissions";
 
-export function DelegateHome() {
-  const { progress } = currentDelegate;
-  const completedCount = [
-    progress.speechComplete,
-    progress.resolutionComplete,
-    progress.quizComplete,
-  ].filter(Boolean).length;
+interface DelegateHomeProps {
+  onNavigate?: (view: string) => void;
+}
+
+export function DelegateHome({ onNavigate }: DelegateHomeProps) {
+  const { submissions } = useSubmissions();
+
+  // Check completion status from database
+  const speechComplete = submissions.some(
+    (s) => s.submission_type === "speech" && (s.status === "submitted" || s.status === "graded")
+  );
+  const resolutionComplete = submissions.some(
+    (s) => s.submission_type === "resolution_draft" && (s.status === "submitted" || s.status === "graded")
+  );
+  // Quiz completion could be tracked separately, for now use mock
+  const quizComplete = currentDelegate.progress.quizComplete;
+
+  const completedCount = [speechComplete, resolutionComplete, quizComplete].filter(Boolean).length;
   const progressPercent = (completedCount / 3) * 100;
 
   const tasks = [
@@ -17,23 +30,29 @@ export function DelegateHome() {
       label: "Opening Speech",
       description: "Write your delegate opening speech in third person",
       icon: Mic,
-      complete: progress.speechComplete,
+      complete: speechComplete,
     },
     {
       id: "resolution",
       label: "Resolution Builder",
       description: "Draft your resolution with preambulatory and operative clauses",
       icon: FileText,
-      complete: progress.resolutionComplete,
+      complete: resolutionComplete,
     },
     {
       id: "quiz",
       label: "Rules Quiz",
       description: "Test your knowledge of MUN rules and procedures",
       icon: HelpCircle,
-      complete: progress.quizComplete,
+      complete: quizComplete,
     },
   ];
+
+  const handleTaskClick = (taskId: string) => {
+    if (onNavigate) {
+      onNavigate(taskId);
+    }
+  };
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto space-y-8">
@@ -78,11 +97,12 @@ export function DelegateHome() {
           {tasks.map((task) => {
             const Icon = task.icon;
             return (
-              <div
+              <button
                 key={task.id}
-                className="diplomatic-card p-5 flex items-center gap-5 hover:shadow-md transition-shadow"
+                onClick={() => handleTaskClick(task.id)}
+                className="diplomatic-card p-5 flex items-center gap-5 hover:shadow-md transition-all hover:border-secondary/50 cursor-pointer text-left w-full group"
               >
-                <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
                   <Icon className="w-6 h-6 text-secondary" />
                 </div>
                 <div className="flex-1">
@@ -94,9 +114,12 @@ export function DelegateHome() {
                 {task.complete ? (
                   <CheckCircle2 className="w-6 h-6 text-success" />
                 ) : (
-                  <Circle className="w-6 h-6 text-muted-foreground" />
+                  <div className="flex items-center gap-2">
+                    <Circle className="w-6 h-6 text-muted-foreground" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

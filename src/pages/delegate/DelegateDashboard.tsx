@@ -11,7 +11,7 @@ export default function DelegateDashboard() {
   const renderView = () => {
     switch (activeView) {
       case "dashboard":
-        return <DelegateHome />;
+        return <DelegateHome onNavigate={setActiveView} />;
       case "speech":
         return <DelegateSpeech />;
       case "resolution":
@@ -19,7 +19,7 @@ export default function DelegateDashboard() {
       case "quiz":
         return <DelegateQuiz />;
       default:
-        return <DelegateHome />;
+        return <DelegateHome onNavigate={setActiveView} />;
     }
   };
 
