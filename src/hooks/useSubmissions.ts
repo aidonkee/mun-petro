@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type SubmissionType = "speech" | "position_paper" | "resolution_draft" | "amendment";
 export type SubmissionStatus = "draft" | "submitted" | "graded";
 
 export interface Submission {
   id: string;
+  user_id: string | null;
   delegate_name: string;
   country: string;
   submission_type: SubmissionType;
@@ -23,6 +25,7 @@ export interface Submission {
 export function useSubmissions() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -46,8 +49,13 @@ export function useSubmissions() {
   }, []);
 
   useEffect(() => {
-    fetchSubmissions();
-  }, [fetchSubmissions]);
+    if (user) {
+      fetchSubmissions();
+    } else {
+      setSubmissions([]);
+      setLoading(false);
+    }
+  }, [fetchSubmissions, user]);
 
   const createSubmission = async (
     delegateName: string,
@@ -56,10 +64,15 @@ export function useSubmissions() {
     content: string,
     status: SubmissionStatus = "draft"
   ) => {
+    if (!user) {
+      throw new Error("You must be logged in to create a submission");
+    }
+
     try {
       const { data, error } = await supabase
         .from("submissions")
         .insert({
+          user_id: user.id,
           delegate_name: delegateName,
           country: country,
           submission_type: submissionType,

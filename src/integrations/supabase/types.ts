@@ -108,6 +108,7 @@ export type Database = {
           submission_type: Database["public"]["Enums"]["submission_type"]
           submitted_at: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           content: string
@@ -122,6 +123,7 @@ export type Database = {
           submission_type?: Database["public"]["Enums"]["submission_type"]
           submitted_at?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -136,17 +138,94 @@ export type Database = {
           submission_type?: Database["public"]["Enums"]["submission_type"]
           submitted_at?: string | null
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      quiz_questions_public: {
+        Row: {
+          config_id: string | null
+          created_at: string | null
+          explanation: string | null
+          id: string | null
+          options: Json | null
+          order_index: number | null
+          question: string | null
+          question_type: string | null
+        }
+        Insert: {
+          config_id?: string | null
+          created_at?: string | null
+          explanation?: string | null
+          id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          question_type?: string | null
+        }
+        Update: {
+          config_id?: string | null
+          created_at?: string | null
+          explanation?: string | null
+          id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          question_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      check_quiz_answer: {
+        Args: { question_id: string; selected_answer: number }
+        Returns: boolean
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "delegate"
       submission_status: "draft" | "submitted" | "graded"
       submission_type:
         | "speech"
@@ -280,6 +359,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "delegate"],
       submission_status: ["draft", "submitted", "graded"],
       submission_type: [
         "speech",

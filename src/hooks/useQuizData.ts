@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface QuizConfig {
   id: string;
@@ -18,7 +19,7 @@ export interface QuizQuestion {
   question: string;
   question_type: "multiple_choice" | "true_false";
   options: string[];
-  correct_answer: number;
+  correct_answer?: number; // Only available for admins
   explanation: string | null;
   order_index: number;
 }
@@ -41,7 +42,7 @@ interface DbQuizQuestion {
   question: string;
   question_type: string;
   options: unknown;
-  correct_answer: number;
+  correct_answer?: number;
   explanation: string | null;
   order_index: number;
   created_at: string;
@@ -49,9 +50,12 @@ interface DbQuizQuestion {
 
 export function useQuizData() {
   const { toast } = useToast();
+  const { role } = useAuth();
   const [config, setConfig] = useState<QuizConfig | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isAdmin = role === "admin";
 
   const fetchQuizData = useCallback(async () => {
     try {
@@ -78,9 +82,11 @@ export function useQuizData() {
           allow_retakes: typedConfig.allow_retakes,
         });
 
-        // Fetch questions for this config
+        // Fetch questions - admins get full table with correct_answer, delegates get public view
+        const tableName = isAdmin ? "quiz_questions" : "quiz_questions_public";
+        
         const { data: questionsData, error: questionsError } = await supabase
-          .from("quiz_questions" as never)
+          .from(tableName as never)
           .select("*")
           .eq("config_id" as never, typedConfig.id as never)
           .order("order_index" as never, { ascending: true });
@@ -94,7 +100,7 @@ export function useQuizData() {
           question: q.question,
           question_type: q.question_type as "multiple_choice" | "true_false",
           options: Array.isArray(q.options) ? (q.options as string[]) : JSON.parse(q.options as string),
-          correct_answer: q.correct_answer,
+          correct_answer: q.correct_answer, // Will be undefined for delegates
           explanation: q.explanation,
           order_index: q.order_index,
         }));
@@ -111,14 +117,30 @@ export function useQuizData() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, isAdmin]);
 
   useEffect(() => {
     fetchQuizData();
   }, [fetchQuizData]);
 
+  // Function to check an answer using secure RPC (for delegates)
+  const checkAnswer = async (questionId: string, selectedAnswer: number): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('check_quiz_answer', {
+        question_id: questionId,
+        selected_answer: selectedAnswer,
+      });
+      
+      if (error) throw error;
+      return data as boolean;
+    } catch (error) {
+      console.error("Error checking answer:", error);
+      throw error;
+    }
+  };
+
   const updateConfig = async (updates: Partial<QuizConfig>) => {
-    if (!config) return;
+    if (!config || !isAdmin) return;
 
     try {
       const { error } = await supabase
@@ -141,7 +163,7 @@ export function useQuizData() {
   };
 
   const addQuestion = async (question: Omit<QuizQuestion, "id" | "config_id" | "order_index">) => {
-    if (!config) return;
+    if (!config || !isAdmin) return;
 
     try {
       const insertData = {
@@ -188,6 +210,8 @@ export function useQuizData() {
   };
 
   const updateQuestion = async (id: string, updates: Partial<QuizQuestion>) => {
+    if (!isAdmin) return;
+    
     try {
       const { error } = await supabase
         .from("quiz_questions" as never)
@@ -209,6 +233,8 @@ export function useQuizData() {
   };
 
   const deleteQuestion = async (id: string) => {
+    if (!isAdmin) return;
+    
     try {
       const { error } = await supabase
         .from("quiz_questions" as never)
@@ -233,6 +259,8 @@ export function useQuizData() {
     config,
     questions,
     loading,
+    isAdmin,
+    checkAnswer,
     updateConfig,
     addQuestion,
     updateQuestion,

@@ -33,11 +33,11 @@ export function AdminLayout({
   onViewChange,
 }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 
