@@ -34,11 +34,11 @@ export function DelegateLayout({
   onViewChange,
 }: DelegateLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 

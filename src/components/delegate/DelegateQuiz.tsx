@@ -3,14 +3,17 @@ import { CheckCircle2, XCircle, ChevronRight, RotateCcw, Loader2, AlertCircle } 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuizData } from "@/hooks/useQuizData";
+import { toast } from "@/hooks/use-toast";
 
 export function DelegateQuiz() {
-  const { config, questions, loading } = useQuizData();
+  const { config, questions, loading, checkAnswer } = useQuizData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   if (loading) {
     return (
@@ -59,11 +62,27 @@ export function DelegateQuiz() {
     setSelectedOption(optionIndex);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedOption === null) return;
-    setHasAnswered(true);
-    if (selectedOption === currentQuestion.correct_answer) {
-      setScore(score + 1);
+    
+    setChecking(true);
+    try {
+      // Use secure RPC to check answer without exposing correct answer client-side
+      const correct = await checkAnswer(currentQuestion.id, selectedOption);
+      setIsCorrect(correct);
+      setHasAnswered(true);
+      if (correct) {
+        setScore(score + 1);
+      }
+    } catch (error) {
+      console.error("Error checking answer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify answer. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -72,6 +91,7 @@ export function DelegateQuiz() {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
       setHasAnswered(false);
+      setIsCorrect(null);
     } else {
       setCompleted(true);
     }
@@ -82,6 +102,7 @@ export function DelegateQuiz() {
     setCurrentIndex(0);
     setSelectedOption(null);
     setHasAnswered(false);
+    setIsCorrect(null);
     setScore(0);
     setCompleted(false);
   };
@@ -168,15 +189,14 @@ export function DelegateQuiz() {
         <div className="p-6 space-y-3">
           {currentQuestion.options.map((option, index) => {
             const isSelected = selectedOption === index;
-            const isCorrect = index === currentQuestion.correct_answer;
-            const showCorrect = hasAnswered && isCorrect;
-            const showWrong = hasAnswered && isSelected && !isCorrect;
+            const showCorrect = hasAnswered && isCorrect && isSelected;
+            const showWrong = hasAnswered && !isCorrect && isSelected;
 
             return (
               <button
                 key={index}
                 onClick={() => handleSelect(index)}
-                disabled={hasAnswered}
+                disabled={hasAnswered || checking}
                 className={cn(
                   "w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-4",
                   isSelected && !hasAnswered && "border-secondary bg-secondary/5",
@@ -207,8 +227,8 @@ export function DelegateQuiz() {
           })}
         </div>
 
-        {/* Explanation */}
-        {hasAnswered && currentQuestion.explanation && (
+        {/* Explanation - Only show if answer was correct and explanation exists */}
+        {hasAnswered && isCorrect && currentQuestion.explanation && (
           <div className="p-6 border-t border-border bg-accent animate-fade-in">
             <p className="text-sm">
               <span className="font-medium text-secondary">Explanation: </span>
@@ -219,10 +239,22 @@ export function DelegateQuiz() {
           </div>
         )}
 
+        {/* Feedback for wrong answer */}
+        {hasAnswered && !isCorrect && (
+          <div className="p-6 border-t border-border bg-destructive/5 animate-fade-in">
+            <p className="text-sm text-destructive">
+              That's not correct. Try to remember this for the retake!
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="p-6 border-t border-border flex justify-end gap-3">
           {!hasAnswered ? (
-            <Button onClick={handleSubmit} disabled={selectedOption === null}>
+            <Button onClick={handleSubmit} disabled={selectedOption === null || checking}>
+              {checking ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
               Submit Answer
             </Button>
           ) : (

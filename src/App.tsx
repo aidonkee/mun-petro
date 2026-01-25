@@ -8,11 +8,24 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import DelegateDashboard from "./pages/delegate/DelegateDashboard";
 import NotFound from "./pages/NotFound";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode; requiredRole: "admin" | "delegate" }) {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingScreen />;
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -26,14 +39,18 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
 }
 
 function AppRoutes() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Routes>
       <Route 
         path="/" 
         element={
-          isAuthenticated 
+          isAuthenticated && role
             ? <Navigate to={role === "admin" ? "/admin" : "/delegate"} replace />
             : <Login />
         } 
