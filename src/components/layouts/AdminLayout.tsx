@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Globe2,
   LogOut,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,6 +25,7 @@ const navItems = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "students", label: "Student Management", icon: Users },
   { id: "grading", label: "Grading", icon: ClipboardCheck },
+  { id: "assessment", label: "Assessment Dashboard", icon: Award },
   { id: "quiz-settings", label: "Quiz Settings", icon: Settings },
 ];
 
