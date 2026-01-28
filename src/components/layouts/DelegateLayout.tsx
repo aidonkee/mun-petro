@@ -9,11 +9,14 @@ import {
   ChevronRight,
   Globe2,
   LogOut,
+  Hand,
+  BookOpen,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { currentDelegate } from "@/data/mockData";
+import { useDelegateProfile } from "@/hooks/useDelegateProfile";
 
 interface DelegateLayoutProps {
   children: React.ReactNode;
@@ -23,9 +26,12 @@ interface DelegateLayoutProps {
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "speech", label: "Opening Speech", icon: Mic },
+  { id: "speech", label: "Speeches", icon: Mic },
+  { id: "position-paper", label: "Position Paper", icon: ScrollText },
   { id: "resolution", label: "Resolution Builder", icon: FileText },
+  { id: "procedural", label: "Procedural Actions", icon: Hand },
   { id: "quiz", label: "Rules Quiz", icon: HelpCircle },
+  { id: "reflection", label: "Self-Reflection", icon: BookOpen },
 ];
 
 export function DelegateLayout({
@@ -36,11 +42,14 @@ export function DelegateLayout({
   const [collapsed, setCollapsed] = useState(false);
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { profile } = useDelegateProfile();
 
   const handleLogout = async () => {
     await signOut();
     navigate("/");
   };
+
+  const countryDisplay = profile?.country || "Delegate";
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -63,7 +72,7 @@ export function DelegateLayout({
                   Delegate Portal
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  {currentDelegate.country}
+                  {countryDisplay}
                 </p>
               </div>
             )}
