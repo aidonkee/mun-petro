@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Plus, Trash2, Copy, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Upload, Plus, Trash2, Copy, Eye, EyeOff, Loader2, Download, CheckCircle, XCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -30,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DelegateProfile {
   id: string;
@@ -48,11 +49,33 @@ interface CreatedCredentials {
   committee: string;
 }
 
+interface BulkImportResult {
+  success: boolean;
+  name: string;
+  country: string;
+  committee: string;
+  email?: string;
+  password?: string;
+  error?: string;
+}
+
+interface BulkImportResponse {
+  success: boolean;
+  total: number;
+  created: number;
+  failed: number;
+  results: BulkImportResult[];
+}
+
 export function StudentManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCredentialsDialogOpen, setIsCredentialsDialogOpen] = useState(false);
+  const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
+  const [isBulkResultsDialogOpen, setIsBulkResultsDialogOpen] = useState(false);
+  const [bulkImportResults, setBulkImportResults] = useState<BulkImportResponse | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<CreatedCredentials | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<{ name: string; country: string; committee: string }[]>([]);
   const [newStudent, setNewStudent] = useState({
     name: "",
     country: "",
@@ -108,6 +131,33 @@ export function StudentManagement() {
     },
   });
 
+  // Bulk import mutation
+  const bulkImportMutation = useMutation({
+    mutationFn: async (students: { name: string; country: string; committee: string }[]) => {
+      const { data, error } = await supabase.functions.invoke("bulk-create-students", {
+        body: { students },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data as BulkImportResponse;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["delegate-profiles"] });
+      setBulkImportResults(data);
+      setIsBulkImportDialogOpen(false);
+      setIsBulkResultsDialogOpen(true);
+      setCsvPreview([]);
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка импорта",
+        description: error.message || "Не удалось импортировать учеников",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete student mutation
   const deleteStudentMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -125,7 +175,7 @@ export function StudentManagement() {
         description: "Профиль ученика был удалён",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Ошибка",
         description: "Не удалось удалить ученика",
@@ -136,6 +186,34 @@ export function StudentManagement() {
 
   const handleBulkImport = () => {
     fileInputRef.current?.click();
+  };
+
+  const parseCSV = (text: string): { name: string; country: string; committee: string }[] => {
+    const lines = text.trim().split("\n");
+    const results: { name: string; country: string; committee: string }[] = [];
+    
+    // Skip header if present
+    const startIndex = lines[0]?.toLowerCase().includes("name") || 
+                       lines[0]?.toLowerCase().includes("имя") ? 1 : 0;
+    
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Handle both comma and semicolon separators
+      const separator = line.includes(";") ? ";" : ",";
+      const parts = line.split(separator).map(p => p.trim().replace(/^["']|["']$/g, ""));
+      
+      if (parts.length >= 2) {
+        results.push({
+          name: parts[0],
+          country: parts[1],
+          committee: parts[2] || "General Assembly",
+        });
+      }
+    }
+    
+    return results;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,14 +229,43 @@ export function StudentManagement() {
       return;
     }
 
-    toast({
-      title: "CSV импорт",
-      description: "Функция массового импорта будет доступна в следующей версии",
-    });
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const parsed = parseCSV(text);
+      
+      if (parsed.length === 0) {
+        toast({
+          title: "Пустой файл",
+          description: "CSV файл не содержит данных для импорта",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (parsed.length > 100) {
+        toast({
+          title: "Слишком много записей",
+          description: "Максимум 100 учеников за один импорт",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setCsvPreview(parsed);
+      setIsBulkImportDialogOpen(true);
+    };
+    
+    reader.readAsText(file);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handleConfirmBulkImport = () => {
+    if (csvPreview.length === 0) return;
+    bulkImportMutation.mutate(csvPreview);
   };
 
   const handleAddStudent = () => {
@@ -194,6 +301,59 @@ export function StudentManagement() {
       title: "Скопировано",
       description: "Все данные скопированы в буфер обмена",
     });
+  };
+
+  const downloadBulkResults = () => {
+    if (!bulkImportResults) return;
+    
+    const successfulResults = bulkImportResults.results.filter(r => r.success);
+    if (successfulResults.length === 0) {
+      toast({
+        title: "Нет данных",
+        description: "Нет успешно созданных учеников для экспорта",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const csvContent = [
+      "Имя,Страна,Комитет,Логин,Пароль",
+      ...successfulResults.map(r => 
+        `"${r.name}","${r.country}","${r.committee}","${r.email}","${r.password}"`
+      )
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `credentials_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Файл скачан",
+      description: "Учётные данные сохранены в CSV файл",
+    });
+  };
+
+  const downloadSampleCSV = () => {
+    const sampleContent = `Имя,Страна,Комитет
+Иван Иванов,Россия,General Assembly
+John Smith,США,UNSC
+Marie Dupont,Франция,WHO`;
+
+    const blob = new Blob(["\uFEFF" + sampleContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sample_students.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -297,7 +457,7 @@ export function StudentManagement() {
         </div>
       </div>
 
-      {/* Credentials Dialog */}
+      {/* Single Credentials Dialog */}
       <Dialog open={isCredentialsDialogOpen} onOpenChange={setIsCredentialsDialogOpen}>
         <DialogContent className="bg-background">
           <DialogHeader>
@@ -380,6 +540,167 @@ export function StudentManagement() {
                 <Copy className="w-4 h-4" />
                 Скопировать все данные
               </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import Preview Dialog */}
+      <Dialog open={isBulkImportDialogOpen} onOpenChange={setIsBulkImportDialogOpen}>
+        <DialogContent className="bg-background max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Предпросмотр импорта</DialogTitle>
+            <DialogDescription>
+              Проверьте данные перед импортом. Найдено {csvPreview.length} записей.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                Будет создано {csvPreview.length} учеников
+              </span>
+              <Button variant="ghost" size="sm" onClick={downloadSampleCSV} className="gap-2">
+                <FileText className="w-4 h-4" />
+                Скачать образец CSV
+              </Button>
+            </div>
+            
+            <ScrollArea className="h-[300px] border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">#</TableHead>
+                    <TableHead className="font-semibold">Имя</TableHead>
+                    <TableHead className="font-semibold">Страна</TableHead>
+                    <TableHead className="font-semibold">Комитет</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {csvPreview.map((student, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell>{student.country}</TableCell>
+                      <TableCell>{student.committee}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsBulkImportDialogOpen(false)}
+                className="flex-1"
+              >
+                Отмена
+              </Button>
+              <Button 
+                onClick={handleConfirmBulkImport}
+                className="flex-1 gap-2"
+                disabled={bulkImportMutation.isPending}
+              >
+                {bulkImportMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Импорт...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Импортировать
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import Results Dialog */}
+      <Dialog open={isBulkResultsDialogOpen} onOpenChange={setIsBulkResultsDialogOpen}>
+        <DialogContent className="bg-background max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">
+              {bulkImportResults?.failed === 0 ? (
+                <span className="text-primary">✓ Импорт завершён успешно</span>
+              ) : (
+                <span>Импорт завершён с ошибками</span>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Создано {bulkImportResults?.created} из {bulkImportResults?.total} учеников
+            </DialogDescription>
+          </DialogHeader>
+          
+          {bulkImportResults && (
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Прогресс</span>
+                  <span className="text-muted-foreground">
+                    {bulkImportResults.created}/{bulkImportResults.total}
+                  </span>
+                </div>
+                <Progress 
+                  value={(bulkImportResults.created / bulkImportResults.total) * 100} 
+                  className="h-2"
+                />
+              </div>
+
+              <ScrollArea className="h-[350px] border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12">Статус</TableHead>
+                      <TableHead>Имя</TableHead>
+                      <TableHead>Страна</TableHead>
+                      <TableHead>Логин</TableHead>
+                      <TableHead>Пароль</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bulkImportResults.results.map((result, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          {result.success ? (
+                            <CheckCircle className="w-5 h-5 text-primary" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-destructive" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{result.name}</TableCell>
+                        <TableCell>{result.country}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {result.email || <span className="text-destructive">{result.error}</span>}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {result.password || "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsBulkResultsDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Закрыть
+                </Button>
+                <Button 
+                  onClick={downloadBulkResults}
+                  className="flex-1 gap-2"
+                  disabled={bulkImportResults.created === 0}
+                >
+                  <Download className="w-4 h-4" />
+                  Скачать учётные данные (CSV)
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
