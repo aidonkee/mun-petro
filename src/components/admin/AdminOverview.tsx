@@ -1,42 +1,94 @@
-import { Users, FileCheck, Award, TrendingUp } from "lucide-react";
-import { mockStudents, mockSubmissions } from "@/data/mockData";
-
-const stats = [
-  {
-    label: "Total Delegates",
-    value: mockStudents.length.toString(),
-    change: `${mockStudents.filter((s) => s.status === "Active").length} active`,
-    icon: Users,
-  },
-  {
-    label: "Submissions",
-    value: mockSubmissions.length.toString(),
-    change: `${mockSubmissions.filter((s) => !s.graded).length} pending`,
-    icon: FileCheck,
-  },
-  {
-    label: "Avg. Score",
-    value: (
-      mockStudents
-        .filter((s) => s.currentScore !== null)
-        .reduce((acc, s) => acc + (s.currentScore || 0), 0) /
-      mockStudents.filter((s) => s.currentScore !== null).length
-    ).toFixed(1),
-    icon: Award,
-  },
-  {
-    label: "Quiz Completion",
-    value: `${Math.round(
-      (mockStudents.filter((s) => s.quizScore !== null).length /
-        mockStudents.length) *
-        100
-    )}%`,
-    icon: TrendingUp,
-  },
-];
+import { Users, FileCheck, Award, TrendingUp, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AdminOverview() {
-  const recentSubmissions = mockSubmissions.slice(0, 4);
+  // Fetch delegate profiles
+  const { data: delegates = [], isLoading: delegatesLoading } = useQuery({
+    queryKey: ["admin-delegates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delegate_profiles")
+        .select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch submissions
+  const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
+    queryKey: ["admin-submissions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("submissions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch quiz results
+  const { data: quizResults = [], isLoading: quizLoading } = useQuery({
+    queryKey: ["admin-quiz-results"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quiz_results")
+        .select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoading = delegatesLoading || submissionsLoading || quizLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const totalDelegates = delegates.length;
+  const activeDelegates = delegates.filter(d => !d.conference_completed).length;
+  const pendingSubmissions = submissions.filter(s => s.status === "submitted").length;
+  const gradedSubmissions = submissions.filter(s => s.status === "graded");
+  
+  const avgScore = gradedSubmissions.length > 0
+    ? (gradedSubmissions.reduce((acc, s) => acc + (s.score || 0), 0) / gradedSubmissions.length).toFixed(1)
+    : "N/A";
+
+  const quizCompletion = totalDelegates > 0
+    ? Math.round((quizResults.length / totalDelegates) * 100)
+    : 0;
+
+  const stats = [
+    {
+      label: "Total Delegates",
+      value: totalDelegates.toString(),
+      change: `${activeDelegates} active`,
+      icon: Users,
+    },
+    {
+      label: "Submissions",
+      value: submissions.length.toString(),
+      change: `${pendingSubmissions} pending`,
+      icon: FileCheck,
+    },
+    {
+      label: "Avg. Score",
+      value: avgScore,
+      icon: Award,
+    },
+    {
+      label: "Quiz Completion",
+      value: `${quizCompletion}%`,
+      icon: TrendingUp,
+    },
+  ];
+
+  const recentSubmissions = submissions.slice(0, 4);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -79,31 +131,37 @@ export function AdminOverview() {
           <h3 className="subsection-heading">Recent Submissions</h3>
         </div>
         <div className="divide-y divide-border">
-          {recentSubmissions.map((submission) => (
-            <div
-              key={submission.id}
-              className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
-            >
-              <div>
-                <p className="font-medium">{submission.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {submission.country} • {submission.type}
-                </p>
+          {recentSubmissions.length > 0 ? (
+            recentSubmissions.map((submission) => (
+              <div
+                key={submission.id}
+                className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div>
+                  <p className="font-medium">{submission.delegate_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {submission.country} • {submission.submission_type}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(submission.created_at).toLocaleDateString()}
+                  </span>
+                  <span
+                    className={
+                      submission.status === "graded" ? "badge-success" : "badge-warning"
+                    }
+                  >
+                    {submission.status === "graded" ? "Graded" : "Pending"}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">
-                  {submission.submittedAt}
-                </span>
-                <span
-                  className={
-                    submission.graded ? "badge-success" : "badge-warning"
-                  }
-                >
-                  {submission.graded ? "Graded" : "Pending"}
-                </span>
-              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-muted-foreground">
+              No submissions yet
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
