@@ -105,6 +105,8 @@ export type Database = {
           created_at: string
           delegate_name: string
           id: string
+          login_email: string | null
+          login_password: string | null
           updated_at: string
           user_id: string
         }
@@ -115,6 +117,8 @@ export type Database = {
           created_at?: string
           delegate_name: string
           id?: string
+          login_email?: string | null
+          login_password?: string | null
           updated_at?: string
           user_id: string
         }
@@ -125,6 +129,8 @@ export type Database = {
           created_at?: string
           delegate_name?: string
           id?: string
+          login_email?: string | null
+          login_password?: string | null
           updated_at?: string
           user_id?: string
         }

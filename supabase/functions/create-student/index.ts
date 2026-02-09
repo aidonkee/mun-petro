@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       console.error("Error assigning role:", roleError);
     }
 
-    // Create delegate profile
+    // Create delegate profile with credentials
     const { error: profileError } = await supabaseAdmin
       .from("delegate_profiles")
       .insert({
@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
         delegate_name: name,
         country,
         committee: committee || "General Assembly",
+        login_email: email,
+        login_password: password,
       });
 
     if (profileError) {

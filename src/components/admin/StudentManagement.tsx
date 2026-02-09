@@ -38,6 +38,8 @@ interface DelegateProfile {
   delegate_name: string;
   country: string;
   committee: string;
+  login_email: string | null;
+  login_password: string | null;
   created_at: string;
 }
 
@@ -714,6 +716,8 @@ Marie Dupont,Франция,WHO`;
               <TableHead className="font-semibold">Имя</TableHead>
               <TableHead className="font-semibold">Страна</TableHead>
               <TableHead className="font-semibold">Комитет</TableHead>
+              <TableHead className="font-semibold">Логин</TableHead>
+              <TableHead className="font-semibold">Пароль</TableHead>
               <TableHead className="font-semibold text-right w-20">
                 Действия
               </TableHead>
@@ -722,13 +726,13 @@ Marie Dupont,Франция,WHO`;
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : students.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Нет зарегистрированных учеников
                 </TableCell>
               </TableRow>
@@ -738,6 +742,26 @@ Marie Dupont,Франция,WHO`;
                   <TableCell className="font-medium">{student.delegate_name}</TableCell>
                   <TableCell>{student.country}</TableCell>
                   <TableCell>{student.committee}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {student.login_email ? (
+                      <div className="flex items-center gap-1">
+                        <span className="truncate max-w-[150px]">{student.login_email}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => copyToClipboard(student.login_email!, "Логин")}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {student.login_password ? (
+                      <div className="flex items-center gap-1">
+                        <span className="truncate max-w-[100px]">{student.login_password}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => copyToClipboard(student.login_password!, "Пароль")}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="ghost"
