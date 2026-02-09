@@ -12,8 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useSubmissions } from "@/hooks/useSubmissions";
 import { toast } from "@/hooks/use-toast";
-import { currentDelegate } from "@/data/mockData";
-
+import { useDelegateProfile } from "@/hooks/useDelegateProfile";
 const PREAMBULATORY_PHRASES = [
   "Affirming", "Alarmed by", "Aware of", "Bearing in mind", "Believing",
   "Confident", "Considering", "Convinced", "Declaring", "Deeply concerned",
@@ -41,6 +40,7 @@ interface Clause {
 
 export function DelegateResolution() {
   const { submissions, loading, createSubmission, updateSubmission } = useSubmissions();
+  const { profile } = useDelegateProfile();
   const [step, setStep] = useState<"preamble" | "operative">("preamble");
   const [topic, setTopic] = useState("Climate Action in Developing Nations");
   const [clauses, setClauses] = useState<Clause[]>([
@@ -55,6 +55,8 @@ export function DelegateResolution() {
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const delegateCountry = profile?.country || "Unknown Country";
 
   // Load existing draft or submitted resolution
   useEffect(() => {
@@ -94,8 +96,8 @@ export function DelegateResolution() {
         await updateSubmission(currentSubmissionId, { content });
       } else {
         const newSubmission = await createSubmission(
-          "Current Delegate",
-          currentDelegate.country,
+          profile?.delegate_name || "Current Delegate",
+          delegateCountry,
           "resolution_draft",
           content,
           "draft"
@@ -138,8 +140,8 @@ export function DelegateResolution() {
         });
       } else {
         const newSubmission = await createSubmission(
-          "Current Delegate",
-          currentDelegate.country,
+          profile?.delegate_name || "Current Delegate",
+          delegateCountry,
           "resolution_draft",
           content,
           "submitted"
