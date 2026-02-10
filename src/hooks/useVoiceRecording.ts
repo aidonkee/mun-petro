@@ -129,19 +129,25 @@ export function useVoiceRecording(
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // Ignore "aborted" errors — these are expected when stopping/restarting
+      if (event.error === "aborted") return;
       console.error("Speech recognition error:", event.error);
       setError(event.error);
       setIsRecording(false);
     };
 
     recognition.onend = () => {
-      // Restart if still supposed to be recording
+      // Restart if still supposed to be recording, with a delay to avoid rapid loops
       if (isRecordingRef.current && recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch {
-          // Already started or other error
-        }
+        setTimeout(() => {
+          if (isRecordingRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch {
+              // Already started or other error
+            }
+          }
+        }, 300);
       }
     };
 
