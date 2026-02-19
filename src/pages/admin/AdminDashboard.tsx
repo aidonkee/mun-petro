@@ -5,6 +5,7 @@ import { StudentManagement } from "@/components/admin/StudentManagement";
 import { AdminGrading } from "@/components/admin/AdminGrading";
 import { QuizSettings } from "@/components/admin/QuizSettings";
 import { AdminAssessmentDashboard } from "@/components/admin/AdminAssessmentDashboard";
+import { GPPRAssessment } from "@/components/admin/GPPRAssessment";
 
 export default function AdminDashboard() {
   const [activeView, setActiveView] = useState("overview");
@@ -21,6 +22,8 @@ export default function AdminDashboard() {
         return <AdminAssessmentDashboard />;
       case "quiz-settings":
         return <QuizSettings />;
+      case "gppr":
+        return <GPPRAssessment />;
       default:
         return <AdminOverview />;
     }
