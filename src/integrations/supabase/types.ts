@@ -136,6 +136,98 @@ export type Database = {
         }
         Relationships: []
       }
+      gppr_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          criteria_file_path: string | null
+          criteria_summary: string | null
+          criteria_text: string | null
+          id: string
+          status: string
+          title: string
+          unit_or_term: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          criteria_file_path?: string | null
+          criteria_summary?: string | null
+          criteria_text?: string | null
+          id?: string
+          status?: string
+          title: string
+          unit_or_term?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          criteria_file_path?: string | null
+          criteria_summary?: string | null
+          criteria_text?: string | null
+          id?: string
+          status?: string
+          title?: string
+          unit_or_term?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gppr_student_works: {
+        Row: {
+          ai_criteria_scores: Json | null
+          ai_feedback: string | null
+          ai_score: string | null
+          created_at: string
+          file_name: string | null
+          file_path: string | null
+          file_type: string | null
+          id: string
+          session_id: string
+          status: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          ai_criteria_scores?: Json | null
+          ai_feedback?: string | null
+          ai_score?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string
+          session_id: string
+          status?: string
+          student_name: string
+          updated_at?: string
+        }
+        Update: {
+          ai_criteria_scores?: Json | null
+          ai_feedback?: string | null
+          ai_score?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string
+          session_id?: string
+          status?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gppr_student_works_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "gppr_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       position_papers: {
         Row: {
           alternative_viewpoints_section: string
