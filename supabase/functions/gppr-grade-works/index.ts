@@ -6,6 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function fileToBase64(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer();
+  const uint8Array = new Uint8Array(buffer);
+  const chunkSize = 8192;
+  let base64 = "";
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    base64 += String.fromCharCode(...uint8Array.slice(i, i + chunkSize));
+  }
+  return btoa(base64);
+}
+
 async function gradeOneWork(
   workId: string,
   filePath: string,
@@ -13,23 +24,19 @@ async function gradeOneWork(
   studentName: string,
   criteriaText: string,
   supabase: ReturnType<typeof createClient>,
-  SUPABASE_URL: string,
-  SUPABASE_SERVICE_ROLE_KEY: string,
   LOVABLE_API_KEY: string
 ) {
-  // Mark as grading
   await supabase.from("gppr_student_works").update({ status: "grading" }).eq("id", workId);
 
   try {
-    // Download student work
-    const fileResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/gppr-works/${filePath}`, {
-      headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-    });
+    // Download student work using Supabase storage client (works with private buckets)
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("gppr-works")
+      .download(filePath);
 
-    if (!fileResponse.ok) throw new Error(`Failed to download work file: ${fileResponse.status}`);
+    if (downloadError || !fileData) throw new Error(`Failed to download work file: ${downloadError?.message}`);
 
-    const fileBuffer = await fileResponse.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    const base64 = await fileToBase64(fileData);
     const mimeType = fileType || "application/pdf";
 
     const criteriaObj = JSON.parse(criteriaText);
@@ -145,14 +152,14 @@ serve(async (req) => {
     if (!session.criteria_text) throw new Error("Criteria not yet analyzed for this session");
 
     // Get works to grade
-    const query = supabase
+    let query = supabase
       .from("gppr_student_works")
       .select("id, file_path, file_type, student_name")
       .eq("session_id", sessionId)
       .eq("status", "pending");
 
     if (workIds && workIds.length > 0) {
-      query.in("id", workIds);
+      query = query.in("id", workIds);
     }
 
     const { data: works, error: worksError } = await query;
@@ -169,12 +176,9 @@ serve(async (req) => {
         work.student_name,
         session.criteria_text,
         supabase,
-        SUPABASE_URL,
-        SUPABASE_SERVICE_ROLE_KEY,
         LOVABLE_API_KEY
       );
       results.push(result);
-      // Small delay between requests
       await new Promise((r) => setTimeout(r, 500));
     }
 
