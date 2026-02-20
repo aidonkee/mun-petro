@@ -22,15 +22,21 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Download criteria file
-    const fileResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/gppr-criteria/${filePath}`, {
-      headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-    });
+    // Download criteria file using Supabase client storage API
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("gppr-criteria")
+      .download(filePath);
 
-    if (!fileResponse.ok) throw new Error(`Failed to download criteria file: ${fileResponse.status}`);
+    if (downloadError || !fileData) throw new Error(`Failed to download criteria file: ${downloadError?.message}`);
 
-    const fileBuffer = await fileResponse.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    const fileBuffer = await fileData.arrayBuffer();
+    const chunkSize = 8192;
+    const uint8Array = new Uint8Array(fileBuffer);
+    let base64 = "";
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      base64 += String.fromCharCode(...uint8Array.slice(i, i + chunkSize));
+    }
+    base64 = btoa(base64);
     const mimeType = fileType || "application/pdf";
 
     // Send to Gemini for analysis
