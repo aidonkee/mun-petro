@@ -1,295 +1,395 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Globe, Mic, FileText, ScrollText, Vote, BookOpen,
-  ClipboardCheck, Users, Sparkles, ArrowRight, GraduationCap,
-  Shield, BarChart3, Rocket, CheckCircle2, ChevronRight
-} from "lucide-react";
+  PiMicrophoneStageFill,
+  PiScrollFill,
+  PiGavelFill,
+  PiChalkboardTeacherFill,
+  PiStudentFill,
+  PiGlobeFill,
+  PiHandshakeFill,
+  PiLightningFill,
+  PiBrainFill,
+  PiNotePencilFill,
+  PiClipboardTextFill,
+  PiUsersThreeFill,
+  PiChartBarFill,
+  PiMagicWandFill,
+  PiSlidersHorizontalFill,
+  PiArrowRightBold,
+  PiFlagBannerFill,
+  PiChatCircleTextFill,
+  PiStarFourFill,
+  PiBookOpenTextFill,
+} from "react-icons/pi";
+import { useState, useEffect } from "react";
 
-const features = [
-  {
-    icon: Mic,
-    title: "Opening Speeches",
-    description: "Delegates craft and deliver opening speeches representing their assigned country's position. Voice recording and timed practice tools included.",
-    gradient: "from-violet-500 to-purple-600",
-  },
-  {
-    icon: FileText,
-    title: "Position Papers",
-    description: "Write structured position papers with background research, country stance, proposed solutions, and cited sources — all in a guided editor.",
-    gradient: "from-cyan-500 to-blue-600",
-  },
-  {
-    icon: ScrollText,
-    title: "Resolution Builder",
-    description: "Collaboratively draft UN-style resolutions with preambulatory and operative clauses. Add sponsors, co-sponsors, and signatories.",
-    gradient: "from-pink-500 to-rose-600",
-  },
-  {
-    icon: Vote,
-    title: "Voting & Amendments",
-    description: "Propose friendly and unfriendly amendments, vote on resolutions, and track all voting records transparently.",
-    gradient: "from-amber-500 to-orange-600",
-  },
-  {
-    icon: BookOpen,
-    title: "Rules Quiz",
-    description: "Interactive quizzes on MUN rules of procedure — motions, points, and parliamentary protocol. Timed with instant feedback.",
-    gradient: "from-teal-500 to-emerald-600",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "Self-Reflection",
-    description: "After the conference, delegates reflect on their contributions, procedure effectiveness, and areas for improvement.",
-    gradient: "from-indigo-500 to-violet-600",
-  },
-];
+const ROTATING_WORDS = ["Diplomacy", "Debate", "Solutions", "Leadership"];
 
-const adminFeatures = [
-  {
-    icon: Users,
-    title: "Student Management",
-    description: "Bulk-create delegate accounts, assign countries and committees, and manage the entire class roster.",
-    gradient: "from-violet-500 to-indigo-600",
-  },
-  {
-    icon: BarChart3,
-    title: "Assessment Dashboard",
-    description: "View all delegate submissions, track completion status, and grade speeches, papers, and resolutions with rubric-based scoring.",
-    gradient: "from-cyan-500 to-teal-600",
-  },
-  {
-    icon: Sparkles,
-    title: "AI-Powered GPPR Grading",
-    description: "Upload assessment criteria and up to 20 student works at once. AI analyzes each work against your criteria and provides detailed feedback.",
-    gradient: "from-pink-500 to-purple-600",
-  },
-  {
-    icon: Shield,
-    title: "Quiz Configuration",
-    description: "Create custom quizzes with multiple-choice questions, set time limits, passing scores, and control retake policies.",
-    gradient: "from-amber-500 to-red-500",
-  },
-];
+function RotatingText() {
+  const [index, setIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+        setFade(true);
+      }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span
+      className={`inline-block transition-all duration-300 ${
+        fade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+    >
+      {ROTATING_WORDS[index]}
+    </span>
+  );
+}
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-[#0a0a1a] text-white overflow-hidden selection:bg-fuchsia-500/30">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-              MUN Platform
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5">
+        <div className="absolute inset-0 bg-[#0a0a1a]/80 backdrop-blur-2xl" />
+        <div className="relative max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <PiGlobeFill className="w-7 h-7 text-fuchsia-400" />
+            <span className="text-lg font-black tracking-tight">
+              MUN<span className="text-fuchsia-400">.</span>platform
             </span>
           </div>
+          <div className="hidden md:flex items-center gap-8 text-sm text-white/50">
+            <a href="#what" className="hover:text-white transition-colors">What is MUN</a>
+            <a href="#delegates" className="hover:text-white transition-colors">For Delegates</a>
+            <a href="#teachers" className="hover:text-white transition-colors">For Teachers</a>
+            <a href="#how" className="hover:text-white transition-colors">How it Works</a>
+          </div>
           <Link to="/login">
-            <Button className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:opacity-90 shadow-lg shadow-violet-500/25">
-              Sign In <ArrowRight className="w-4 h-4 ml-1" />
+            <Button className="bg-fuchsia-500 hover:bg-fuchsia-600 text-white text-sm font-bold px-5 rounded-full">
+              Sign In
             </Button>
           </Link>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6">
-        {/* Decorative blobs */}
-        <div className="absolute top-20 left-[-10%] w-[500px] h-[500px] bg-gradient-to-br from-violet-400/30 to-cyan-400/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-40 right-[-10%] w-[400px] h-[400px] bg-gradient-to-br from-pink-400/25 to-amber-400/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-[300px] h-[300px] bg-gradient-to-br from-cyan-400/20 to-teal-400/15 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-100 to-cyan-100 text-violet-700 text-sm font-medium mb-8">
-            <GraduationCap className="w-4 h-4" />
-            Educational Simulation Platform
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-            <span className="bg-gradient-to-r from-violet-600 via-cyan-600 to-pink-600 bg-clip-text text-transparent">
-              Model United Nations
-            </span>
-          </h1>
-
-          <div className="max-w-3xl mx-auto mb-8">
-            <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
-              <strong>MUN</strong> stands for <strong>Model United Nations</strong> — an academic simulation where students role-play as delegates of UN member states, debating real-world issues, drafting resolutions, and practicing diplomacy.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {["Diplomacy", "Public Speaking", "Critical Thinking", "Collaboration", "Research"].map((skill) => (
-              <span
-                key={skill}
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-200 text-sm font-medium text-foreground"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/login">
-              <Button size="lg" className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white text-lg px-8 py-6 shadow-xl shadow-violet-500/25 hover:opacity-90 hover:shadow-2xl transition-all">
-                Get Started <Rocket className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <a href="#features">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 border-violet-200 hover:bg-violet-50">
-                Explore Features <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
-            </a>
-          </div>
+      {/* Hero */}
+      <section className="relative min-h-screen flex items-center pt-16">
+        {/* Gradient mesh background */}
+        <div className="absolute inset-0">
+          <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-fuchsia-600/15 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] bg-cyan-600/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[30%] right-[20%] w-[30vw] h-[30vw] bg-amber-500/8 rounded-full blur-[80px]" />
         </div>
-      </section>
+        {/* Grid lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-      {/* What is MUN? */}
-      <section className="py-20 px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-50/50 via-cyan-50/30 to-transparent pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6">
+        <div className="relative max-w-7xl mx-auto px-6 w-full">
+          <div className="max-w-4xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 text-xs font-medium tracking-wide uppercase mb-8">
+              <PiStarFourFill className="w-3 h-3" />
+              Educational Simulation
+            </div>
+
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-black leading-[0.9] tracking-tight mb-8">
+              Model
+              <br />
+              United
+              <br />
+              <span className="bg-gradient-to-r from-fuchsia-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
+                Nations
+              </span>
+            </h1>
+
+            <p className="text-lg md:text-xl text-white/50 max-w-xl leading-relaxed mb-4">
+              An academic simulation where students become diplomats — representing real countries, debating global issues, and crafting resolutions in the style of the United Nations.
+            </p>
+
+            <p className="text-2xl md:text-3xl font-bold text-white/80 mb-10">
+              Where students practice{" "}
+              <span className="text-fuchsia-400">
+                <RotatingText />
+              </span>
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <Link to="/login">
+                <Button className="bg-white text-[#0a0a1a] hover:bg-white/90 text-base font-bold px-8 py-6 rounded-full">
+                  Start Now <PiArrowRightBold className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+              <a href="#what">
+                <Button variant="outline" className="border-white/20 text-white/70 hover:text-white hover:bg-white/5 text-base px-8 py-6 rounded-full">
+                  Learn More
+                </Button>
+              </a>
+            </div>
+          </div>
+
+          {/* Side floating stats */}
+          <div className="hidden lg:flex flex-col gap-4 absolute right-6 top-1/2 -translate-y-1/2">
             {[
-              { title: "Simulate", desc: "Take on the role of a UN delegate representing a real country in committee sessions.", icon: Globe, gradient: "from-violet-500 to-purple-600" },
-              { title: "Debate", desc: "Discuss pressing global issues — from climate change to human rights — following parliamentary procedure.", icon: Mic, gradient: "from-cyan-500 to-blue-600" },
-              { title: "Resolve", desc: "Draft and vote on resolutions that propose real solutions to international challenges.", icon: ScrollText, gradient: "from-pink-500 to-rose-600" },
-            ].map((item) => (
-              <div key={item.title} className="group relative p-8 rounded-2xl bg-white/80 backdrop-blur-sm border border-border/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300">
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
-                  <item.icon className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+              { label: "Skills", items: ["Public Speaking", "Research", "Negotiation"] },
+            ].map((group) => (
+              <div key={group.label} className="flex flex-col gap-2">
+                {group.items.map((item) => (
+                  <div
+                    key={item}
+                    className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm text-sm text-white/60"
+                  >
+                    {item}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Delegate Features */}
-      <section id="features" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-100 to-teal-100 text-cyan-700 text-sm font-medium mb-4">
-              <Users className="w-4 h-4" /> For Delegates
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-cyan-600 to-violet-600 bg-clip-text text-transparent">
-                Everything a Delegate Needs
+      {/* What is MUN */}
+      <section id="what" className="py-32 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-fuchsia-900/5 to-transparent" />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-16 items-center">
+            <div>
+              <span className="text-fuchsia-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+                // What is MUN
               </span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From writing speeches to voting on resolutions — a complete toolkit for every step of the MUN experience.
-            </p>
-          </div>
+              <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+                Diplomacy as a
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-cyan-400">
+                  classroom experience
+                </span>
+              </h2>
+              <p className="text-white/50 text-lg leading-relaxed">
+                Model United Nations transforms learning into action. Students research real global issues, represent actual countries, and work through the same procedures used at the real UN — motions, caucuses, resolutions, and votes.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="group relative p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-border/50 hover:shadow-xl hover:shadow-violet-500/10 transition-all duration-300 overflow-hidden"
-              >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${feature.gradient}`} />
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <feature.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: PiGlobeFill, title: "Simulate", desc: "Represent a real UN member state in committee sessions", color: "fuchsia" },
+                { icon: PiChatCircleTextFill, title: "Debate", desc: "Discuss climate, security, human rights using parliamentary rules", color: "cyan" },
+                { icon: PiScrollFill, title: "Draft", desc: "Write resolutions proposing solutions to global challenges", color: "amber" },
+                { icon: PiHandshakeFill, title: "Negotiate", desc: "Build coalitions, amend clauses, and reach consensus", color: "emerald" },
+              ].map((item) => {
+                const colorMap: Record<string, string> = {
+                  fuchsia: "border-fuchsia-500/20 bg-fuchsia-500/5 hover:bg-fuchsia-500/10",
+                  cyan: "border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10",
+                  amber: "border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10",
+                  emerald: "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10",
+                };
+                const iconColorMap: Record<string, string> = {
+                  fuchsia: "text-fuchsia-400",
+                  cyan: "text-cyan-400",
+                  amber: "text-amber-400",
+                  emerald: "text-emerald-400",
+                };
+                return (
+                  <div
+                    key={item.title}
+                    className={`p-6 rounded-2xl border transition-colors duration-300 ${colorMap[item.color]}`}
+                  >
+                    <item.icon className={`w-8 h-8 mb-4 ${iconColorMap[item.color]}`} />
+                    <h3 className="text-lg font-bold mb-1">{item.title}</h3>
+                    <p className="text-white/40 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Admin / Teacher Features */}
-      <section className="py-20 px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-50/60 via-pink-50/30 to-amber-50/40 pointer-events-none" />
-        <div className="relative max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-100 to-violet-100 text-pink-700 text-sm font-medium mb-4">
-              <GraduationCap className="w-4 h-4" /> For Teachers
+      {/* Delegate Features — staggered layout */}
+      <section id="delegates" className="py-32 px-6 relative">
+        <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-cyan-600/8 rounded-full blur-[100px]" />
+        <div className="relative max-w-7xl mx-auto">
+          <span className="text-cyan-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+            // For Delegates
+          </span>
+          <h2 className="text-4xl md:text-6xl font-black leading-tight mb-4 max-w-2xl">
+            Your complete
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-400">
+              MUN toolkit
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent">
-                Powerful Admin Tools
-              </span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Manage students, grade submissions, configure quizzes, and leverage AI to speed up assessment workflows.
-            </p>
-          </div>
+          </h2>
+          <p className="text-white/40 text-lg mb-16 max-w-xl">
+            Every tool you need from preparation to the final vote — all in one place.
+          </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {adminFeatures.map((feature) => (
-              <div
-                key={feature.title}
-                className="group relative p-8 rounded-2xl bg-white/80 backdrop-blur-sm border border-border/50 hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-300 overflow-hidden"
-              >
-                <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${feature.gradient}`} />
-                <div className="flex items-start gap-5">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="w-7 h-7 text-white" />
+          <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+            {[
+              { icon: PiMicrophoneStageFill, title: "Opening Speeches", desc: "Craft and deliver your country's opening statement. Practice with voice recording and a built-in timer.", accent: "fuchsia" },
+              { icon: PiNotePencilFill, title: "Position Papers", desc: "Structured editor for background, country position, alternative viewpoints, proposed solutions, and sources.", accent: "cyan" },
+              { icon: PiScrollFill, title: "Resolution Drafting", desc: "Build UN-format resolutions with preambulatory and operative clauses. Add sponsors and signatories.", accent: "amber" },
+              { icon: PiGavelFill, title: "Voting & Amendments", desc: "Propose friendly or unfriendly amendments, vote for/against/abstain, and track all records.", accent: "emerald" },
+              { icon: PiBookOpenTextFill, title: "Rules Quiz", desc: "Timed interactive quizzes on MUN procedure — motions, points of order, right of reply, and more.", accent: "fuchsia" },
+              { icon: PiClipboardTextFill, title: "Self-Reflection", desc: "Post-conference reflection on contributions, procedure effectiveness, and growth areas.", accent: "cyan" },
+            ].map((feature, i) => {
+              const accentMap: Record<string, { border: string; icon: string; dot: string }> = {
+                fuchsia: { border: "border-fuchsia-500/15", icon: "text-fuchsia-400", dot: "bg-fuchsia-400" },
+                cyan: { border: "border-cyan-500/15", icon: "text-cyan-400", dot: "bg-cyan-400" },
+                amber: { border: "border-amber-500/15", icon: "text-amber-400", dot: "bg-amber-400" },
+                emerald: { border: "border-emerald-500/15", icon: "text-emerald-400", dot: "bg-emerald-400" },
+              };
+              const a = accentMap[feature.accent];
+              return (
+                <div
+                  key={feature.title}
+                  className={`group flex gap-5 p-6 rounded-2xl border ${a.border} bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-300 ${i % 2 === 1 ? "md:translate-y-8" : ""}`}
+                >
+                  <div className="shrink-0 mt-1">
+                    <feature.icon className={`w-7 h-7 ${a.icon}`} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                    <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+                      {feature.title}
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.dot} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                    </h3>
+                    <p className="text-white/40 text-sm leading-relaxed">{feature.desc}</p>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="bg-gradient-to-r from-amber-500 to-pink-600 bg-clip-text text-transparent">
-                How It Works
-              </span>
-            </h2>
-          </div>
+      {/* Teacher / Admin Features */}
+      <section id="teachers" className="py-32 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-900/5 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-[35vw] h-[35vw] bg-amber-500/8 rounded-full blur-[100px]" />
 
-          <div className="space-y-6">
+        <div className="relative max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-16">
+            <div className="lg:w-1/3 lg:sticky lg:top-32 lg:self-start">
+              <span className="text-amber-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+                // For Teachers
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+                Admin tools that
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-fuchsia-400">
+                  actually help
+                </span>
+              </h2>
+              <p className="text-white/40 text-lg leading-relaxed">
+                Manage your entire MUN conference and GPPR assessments from one dashboard.
+              </p>
+            </div>
+
+            <div className="lg:w-2/3 space-y-5">
+              {[
+                { icon: PiUsersThreeFill, title: "Student Management", desc: "Bulk-create delegate accounts with auto-generated credentials. Assign countries, committees, and manage the full class roster from a single view.", accent: "fuchsia" },
+                { icon: PiChartBarFill, title: "Assessment Dashboard", desc: "Track every delegate's progress across speeches, position papers, resolutions, quizzes, and self-reflections. Rubric-based grading with detailed feedback.", accent: "cyan" },
+                { icon: PiMagicWandFill, title: "AI-Powered GPPR Grading", desc: "Upload your assessment criteria first — the AI learns your rubric. Then upload up to 20 student works at once. Get criterion-by-criterion scores and written feedback for each student.", accent: "amber" },
+                { icon: PiSlidersHorizontalFill, title: "Quiz Builder", desc: "Create custom multiple-choice quizzes. Set time limits, passing thresholds, and retake policies. Questions auto-shuffle for each attempt.", accent: "emerald" },
+              ].map((feature) => {
+                const accentMap: Record<string, { border: string; icon: string; bg: string }> = {
+                  fuchsia: { border: "border-fuchsia-500/20", icon: "text-fuchsia-400", bg: "bg-fuchsia-500/10" },
+                  cyan: { border: "border-cyan-500/20", icon: "text-cyan-400", bg: "bg-cyan-500/10" },
+                  amber: { border: "border-amber-500/20", icon: "text-amber-400", bg: "bg-amber-500/10" },
+                  emerald: { border: "border-emerald-500/20", icon: "text-emerald-400", bg: "bg-emerald-500/10" },
+                };
+                const a = accentMap[feature.accent];
+                return (
+                  <div
+                    key={feature.title}
+                    className={`p-8 rounded-2xl border ${a.border} bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300`}
+                  >
+                    <div className="flex items-start gap-5">
+                      <div className={`w-12 h-12 rounded-xl ${a.bg} flex items-center justify-center shrink-0`}>
+                        <feature.icon className={`w-6 h-6 ${a.icon}`} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                        <p className="text-white/40 leading-relaxed">{feature.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works — horizontal timeline */}
+      <section id="how" className="py-32 px-6 relative">
+        <div className="relative max-w-7xl mx-auto">
+          <span className="text-emerald-400 text-sm font-bold tracking-widest uppercase mb-4 block">
+            // How it works
+          </span>
+          <h2 className="text-4xl md:text-6xl font-black mb-20">
+            Four steps to
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+              conference day
+            </span>
+          </h2>
+
+          <div className="grid md:grid-cols-4 gap-8 relative">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-fuchsia-500/40 via-cyan-500/40 to-emerald-500/40" />
+
             {[
-              { step: "1", title: "Teacher Creates the Conference", desc: "Set up committees, assign countries, and invite students with auto-generated accounts.", gradient: "from-violet-500 to-purple-600" },
-              { step: "2", title: "Delegates Prepare", desc: "Research your country, write a position paper, and practice your opening speech with the built-in tools.", gradient: "from-cyan-500 to-blue-600" },
-              { step: "3", title: "Simulate the Conference", desc: "Deliver speeches, propose motions, draft resolutions, debate amendments, and cast votes.", gradient: "from-pink-500 to-rose-600" },
-              { step: "4", title: "Assess & Reflect", desc: "Teachers grade with AI assistance. Delegates complete self-reflections. Everyone grows.", gradient: "from-amber-500 to-orange-600" },
-            ].map((item) => (
-              <div key={item.step} className="flex items-start gap-6 group">
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center shrink-0 text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform`}>
-                  {item.step}
+              { num: "01", title: "Setup", desc: "Teacher creates the conference, assigns countries and committees, generates student accounts.", color: "fuchsia" },
+              { num: "02", title: "Prepare", desc: "Delegates research their country, write position papers, and rehearse opening speeches.", color: "cyan" },
+              { num: "03", title: "Simulate", desc: "Deliver speeches, raise motions, caucus, draft resolutions, propose amendments, and vote.", color: "amber" },
+              { num: "04", title: "Assess", desc: "Teachers grade with AI assistance. Delegates complete self-reflections. Everyone grows.", color: "emerald" },
+            ].map((step) => {
+              const colorMap: Record<string, { num: string; dot: string }> = {
+                fuchsia: { num: "text-fuchsia-400", dot: "bg-fuchsia-400 shadow-fuchsia-400/50" },
+                cyan: { num: "text-cyan-400", dot: "bg-cyan-400 shadow-cyan-400/50" },
+                amber: { num: "text-amber-400", dot: "bg-amber-400 shadow-amber-400/50" },
+                emerald: { num: "text-emerald-400", dot: "bg-emerald-400 shadow-emerald-400/50" },
+              };
+              const c = colorMap[step.color];
+              return (
+                <div key={step.num} className="relative text-center md:text-left">
+                  <div className={`w-4 h-4 rounded-full ${c.dot} shadow-lg mx-auto md:mx-0 mb-6`} />
+                  <span className={`text-5xl font-black ${c.num} opacity-30 block mb-2`}>
+                    {step.num}
+                  </span>
+                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-white/40 text-sm leading-relaxed">{step.desc}</p>
                 </div>
-                <div className="pt-1">
-                  <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto relative">
-          <div className="relative rounded-3xl overflow-hidden p-12 md:p-16 text-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-cyan-600 to-pink-600" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+      <section className="py-32 px-6">
+        <div className="max-w-5xl mx-auto relative">
+          <div className="relative rounded-[2rem] overflow-hidden p-12 md:p-20">
+            <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600 via-purple-700 to-cyan-700" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="absolute top-[-50%] right-[-20%] w-[60%] h-[200%] bg-white/5 rotate-12 blur-sm" />
+
             <div className="relative">
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                Ready to Start Your MUN Journey?
+              <PiFlagBannerFill className="w-12 h-12 text-white/30 mb-6" />
+              <h2 className="text-4xl md:text-6xl font-black text-white leading-tight mb-4">
+                Ready to run
+                <br />
+                your conference?
               </h2>
-              <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-                Join the platform trusted by teachers and students for an immersive Model United Nations experience.
+              <p className="text-white/60 text-lg mb-10 max-w-lg">
+                Join educators who use this platform to bring Model United Nations to life in their classrooms.
               </p>
               <Link to="/login">
-                <Button size="lg" className="bg-white text-violet-700 hover:bg-white/90 text-lg px-10 py-6 shadow-2xl font-bold">
-                  Get Started Now <ArrowRight className="w-5 h-5 ml-2" />
+                <Button className="bg-white text-purple-900 hover:bg-white/90 text-base font-bold px-10 py-6 rounded-full">
+                  Get Started <PiArrowRightBold className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
             </div>
@@ -298,18 +398,16 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-10 px-6 border-t border-border/50">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-              <Globe className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-              MUN Platform
+      <footer className="py-12 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <PiGlobeFill className="w-5 h-5 text-fuchsia-400" />
+            <span className="font-bold tracking-tight">
+              MUN<span className="text-fuchsia-400">.</span>platform
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MUN Platform. Built for educators and students.
+          <p className="text-sm text-white/30">
+            © {new Date().getFullYear()} Built for educators and students.
           </p>
         </div>
       </footer>
