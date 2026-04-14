@@ -29,7 +29,7 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   if (role !== requiredRole) {
