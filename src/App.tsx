@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import DelegateDashboard from "./pages/delegate/DelegateDashboard";
 import NotFound from "./pages/NotFound";
@@ -28,7 +29,7 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactNode;
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   if (role !== requiredRole) {
@@ -49,6 +50,10 @@ function AppRoutes() {
     <Routes>
       <Route 
         path="/" 
+        element={<Landing />} 
+      />
+      <Route 
+        path="/login" 
         element={
           isAuthenticated && role
             ? <Navigate to={role === "admin" ? "/admin" : "/delegate"} replace />
