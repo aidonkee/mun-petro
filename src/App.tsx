@@ -50,6 +50,10 @@ function AppRoutes() {
     <Routes>
       <Route 
         path="/" 
+        element={<Landing />} 
+      />
+      <Route 
+        path="/login" 
         element={
           isAuthenticated && role
             ? <Navigate to={role === "admin" ? "/admin" : "/delegate"} replace />
