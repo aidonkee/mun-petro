@@ -221,7 +221,10 @@
   }
 
   .input-diplomatic {
-    @apply border-border bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200;
+    @apply border-input focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all duration-200 shadow-inner;
+    background:
+      linear-gradient(135deg, hsl(var(--cyan) / 0.12), hsl(var(--pink) / 0.08)),
+      hsl(var(--card) / 0.78);
   }
 
   .editor-container {
@@ -229,15 +232,18 @@
   }
 
   .clause-item {
-    @apply p-4 border-b border-border last:border-0 hover:bg-muted/50 transition-colors;
+    @apply p-4 border-b border-border last:border-0 transition-colors;
+    background: linear-gradient(90deg, hsl(var(--violet) / 0.08), hsl(var(--cyan) / 0.05), transparent);
   }
 
   .quiz-option {
-    @apply p-4 rounded-xl border-2 border-border cursor-pointer transition-all duration-200 hover:border-primary/50 hover:bg-primary/5;
+    @apply p-4 rounded-xl border-2 border-border cursor-pointer transition-all duration-200 hover:border-primary/50;
+    background: linear-gradient(135deg, hsl(var(--card) / 0.78), hsl(var(--muted) / 0.66));
   }
 
   .quiz-option-selected {
-    @apply border-primary bg-primary/10;
+    @apply border-primary;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.20), hsl(var(--accent) / 0.14));
   }
 
   /* Vibrant icon containers */
