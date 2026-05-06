@@ -148,8 +148,31 @@ export function DelegateLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">{children}</div>
+      <main className="flex-1 overflow-auto relative">
+        {/* Vibrant decorative background */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0"
+          style={{
+            background:
+              "radial-gradient(900px circle at 0% 0%, hsl(252 85% 60% / 0.12), transparent 55%)," +
+              "radial-gradient(700px circle at 100% 10%, hsl(199 89% 48% / 0.12), transparent 55%)," +
+              "radial-gradient(800px circle at 80% 100%, hsl(330 80% 60% / 0.12), transparent 55%)," +
+              "radial-gradient(600px circle at 10% 90%, hsl(38 92% 55% / 0.10), transparent 55%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage:
+              "radial-gradient(ellipse at center, black 30%, transparent 75%)",
+          }}
+        />
+        <div className="relative z-10 p-8">{children}</div>
       </main>
     </div>
   );

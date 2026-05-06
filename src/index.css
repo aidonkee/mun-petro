@@ -124,13 +124,19 @@
 
 @layer components {
   .diplomatic-card {
-    @apply bg-card border border-border rounded-xl shadow-sm;
-    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06), 0 1px 3px -1px rgb(0 0 0 / 0.04);
+    @apply border border-border rounded-xl shadow-sm relative overflow-hidden;
+    background:
+      linear-gradient(135deg, hsl(252 85% 60% / 0.04) 0%, hsl(199 89% 48% / 0.03) 50%, hsl(330 80% 60% / 0.04) 100%),
+      hsl(var(--card));
+    box-shadow: 0 4px 16px -4px hsl(252 85% 60% / 0.10), 0 1px 3px -1px rgb(0 0 0 / 0.04);
   }
 
   .diplomatic-card-elevated {
-    @apply bg-card border border-border rounded-xl;
-    box-shadow: 0 8px 16px -4px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.06);
+    @apply border border-border rounded-xl relative overflow-hidden;
+    background:
+      linear-gradient(135deg, hsl(252 85% 60% / 0.05) 0%, hsl(199 89% 48% / 0.04) 50%, hsl(330 80% 60% / 0.05) 100%),
+      hsl(var(--card));
+    box-shadow: 0 12px 32px -8px hsl(252 85% 60% / 0.18), 0 4px 8px -4px rgb(0 0 0 / 0.06);
   }
 
   .gradient-card {
@@ -184,6 +190,10 @@
   .section-heading {
     @apply text-2xl font-semibold tracking-tight;
     font-family: var(--font-heading);
+    background: linear-gradient(135deg, hsl(252 85% 55%) 0%, hsl(330 80% 55%) 50%, hsl(199 89% 48%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .subsection-heading {
