@@ -300,6 +300,20 @@
   .delegate-main input,
   .delegate-main [role="combobox"] {
     @apply border-input shadow-inner;
+    color: hsl(var(--foreground));
+  }
+
+  .delegate-main button.bg-background,
+  .delegate-main button.border-input:not(.bg-primary):not(.bg-secondary):not(.bg-destructive),
+  .delegate-main button[data-state]:not(.bg-primary):not(.bg-secondary):not(.bg-destructive) {
+    background: linear-gradient(135deg, hsl(var(--amber) / 0.30), hsl(var(--pink) / 0.24));
+    border-color: hsl(var(--primary) / 0.28);
+  }
+
+  .delegate-main select,
+  .delegate-main [cmdk-input-wrapper],
+  .delegate-main [data-radix-select-trigger] {
+    background: linear-gradient(135deg, hsl(var(--cyan) / 0.24), hsl(var(--pink) / 0.22));
   }
 
   .delegate-main {
