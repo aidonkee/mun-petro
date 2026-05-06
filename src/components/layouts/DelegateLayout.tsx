@@ -148,7 +148,7 @@ export function DelegateLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto relative">
+      <main className="delegate-main flex-1 overflow-auto relative">
         {/* Vibrant decorative background */}
         <div
           aria-hidden
