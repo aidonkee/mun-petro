@@ -299,7 +299,8 @@
   .delegate-main textarea,
   .delegate-main input,
   .delegate-main [role="combobox"] {
-    @apply border-input shadow-inner;
+    @apply shadow-inner;
+    border-color: hsl(var(--input));
     color: hsl(var(--foreground));
   }
 
