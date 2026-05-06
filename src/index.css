@@ -126,17 +126,17 @@
   .diplomatic-card {
     @apply border border-border rounded-xl shadow-sm relative overflow-hidden;
     background:
-      linear-gradient(135deg, hsl(252 85% 60% / 0.04) 0%, hsl(199 89% 48% / 0.03) 50%, hsl(330 80% 60% / 0.04) 100%),
-      hsl(var(--card));
-    box-shadow: 0 4px 16px -4px hsl(252 85% 60% / 0.10), 0 1px 3px -1px rgb(0 0 0 / 0.04);
+      linear-gradient(135deg, hsl(var(--violet) / 0.16) 0%, hsl(var(--cyan) / 0.11) 45%, hsl(var(--pink) / 0.13) 100%),
+      linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--muted) / 0.72));
+    box-shadow: 0 16px 40px -24px hsl(var(--violet) / 0.50), 0 6px 18px -10px hsl(var(--pink) / 0.24);
   }
 
   .diplomatic-card-elevated {
     @apply border border-border rounded-xl relative overflow-hidden;
     background:
-      linear-gradient(135deg, hsl(252 85% 60% / 0.05) 0%, hsl(199 89% 48% / 0.04) 50%, hsl(330 80% 60% / 0.05) 100%),
-      hsl(var(--card));
-    box-shadow: 0 12px 32px -8px hsl(252 85% 60% / 0.18), 0 4px 8px -4px rgb(0 0 0 / 0.06);
+      linear-gradient(135deg, hsl(var(--violet) / 0.20) 0%, hsl(var(--cyan) / 0.13) 50%, hsl(var(--pink) / 0.16) 100%),
+      linear-gradient(180deg, hsl(var(--card) / 0.95), hsl(var(--muted) / 0.78));
+    box-shadow: 0 24px 58px -30px hsl(var(--violet) / 0.58), 0 10px 24px -16px hsl(var(--cyan) / 0.32);
   }
 
   .gradient-card {
