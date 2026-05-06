@@ -190,6 +190,10 @@
   .section-heading {
     @apply text-2xl font-semibold tracking-tight;
     font-family: var(--font-heading);
+    background: linear-gradient(135deg, hsl(252 85% 55%) 0%, hsl(330 80% 55%) 50%, hsl(199 89% 48%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .subsection-heading {
