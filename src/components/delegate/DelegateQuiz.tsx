@@ -227,7 +227,20 @@ export function DelegateQuiz() {
         </div>
 
         <div className="p-6 space-y-3">
-          {currentQuestion.options.map((option, index) => {
+          {isOpenEnded ? (
+            <div className="space-y-2">
+              <Textarea
+                value={openText}
+                onChange={(e) => setOpenText(e.target.value)}
+                disabled={hasAnswered}
+                placeholder="Type your answer here..."
+                rows={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                Open-ended responses are submitted for the chair's manual review.
+              </p>
+            </div>
+          ) : currentQuestion.options.map((option, index) => {
             const isSelected = selectedOption === index;
             const showCorrect = hasAnswered && isCorrect && isSelected;
             const showWrong = hasAnswered && !isCorrect && isSelected;
@@ -268,7 +281,7 @@ export function DelegateQuiz() {
         </div>
 
         {/* Explanation - Only show if answer was correct and explanation exists */}
-        {hasAnswered && isCorrect && currentQuestion.explanation && (
+        {hasAnswered && !isOpenEnded && isCorrect && currentQuestion.explanation && (
           <div className="p-6 border-t border-border bg-accent animate-fade-in">
             <p className="text-sm">
               <span className="font-medium text-secondary">Explanation: </span>
@@ -280,7 +293,7 @@ export function DelegateQuiz() {
         )}
 
         {/* Feedback for wrong answer */}
-        {hasAnswered && !isCorrect && (
+        {hasAnswered && !isOpenEnded && !isCorrect && (
           <div className="p-6 border-t border-border bg-destructive/5 animate-fade-in">
             <p className="text-sm text-destructive">
               That's not correct. Try to remember this for the retake!
@@ -288,14 +301,25 @@ export function DelegateQuiz() {
           </div>
         )}
 
+        {hasAnswered && isOpenEnded && (
+          <div className="p-6 border-t border-border bg-accent animate-fade-in">
+            <p className="text-sm text-muted-foreground">
+              Your response has been recorded and will be reviewed by the chair.
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="p-6 border-t border-border flex justify-end gap-3">
           {!hasAnswered ? (
-            <Button onClick={handleSubmit} disabled={selectedOption === null || checking}>
+            <Button
+              onClick={handleSubmit}
+              disabled={(isOpenEnded ? !openText.trim() : selectedOption === null) || checking}
+            >
               {checking ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Submit Answer
+              {isOpenEnded ? "Submit Response" : "Submit Answer"}
             </Button>
           ) : (
             <Button onClick={handleNext} className="gap-2">
