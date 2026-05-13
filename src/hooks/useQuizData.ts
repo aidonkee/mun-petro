@@ -17,9 +17,10 @@ export interface QuizQuestion {
   id: string;
   config_id: string;
   question: string;
-  question_type: "multiple_choice" | "true_false";
+  question_type: "multiple_choice" | "true_false" | "open_ended";
   options: string[];
   correct_answer?: number; // Only available for admins
+  expected_answer?: string | null; // Reference answer for open_ended (admins only)
   explanation: string | null;
   order_index: number;
 }
@@ -43,6 +44,7 @@ interface DbQuizQuestion {
   question_type: string;
   options: unknown;
   correct_answer?: number;
+  expected_answer?: string | null;
   explanation: string | null;
   order_index: number;
   created_at: string;
@@ -98,9 +100,10 @@ export function useQuizData() {
           id: q.id,
           config_id: q.config_id,
           question: q.question,
-          question_type: q.question_type as "multiple_choice" | "true_false",
-          options: Array.isArray(q.options) ? (q.options as string[]) : JSON.parse(q.options as string),
+          question_type: q.question_type as "multiple_choice" | "true_false" | "open_ended",
+          options: Array.isArray(q.options) ? (q.options as string[]) : (q.options ? JSON.parse(q.options as string) : []),
           correct_answer: q.correct_answer, // Will be undefined for delegates
+          expected_answer: q.expected_answer ?? null,
           explanation: q.explanation,
           order_index: q.order_index,
         }));
@@ -171,7 +174,8 @@ export function useQuizData() {
         question: question.question,
         question_type: question.question_type,
         options: question.options,
-        correct_answer: question.correct_answer,
+        correct_answer: question.question_type === "open_ended" ? null : question.correct_answer,
+        expected_answer: question.question_type === "open_ended" ? (question.expected_answer ?? null) : null,
         explanation: question.explanation,
         order_index: questions.length,
       };
@@ -189,9 +193,10 @@ export function useQuizData() {
         id: typedData.id,
         config_id: typedData.config_id,
         question: typedData.question,
-        question_type: typedData.question_type as "multiple_choice" | "true_false",
-        options: Array.isArray(typedData.options) ? (typedData.options as string[]) : JSON.parse(typedData.options as string),
+        question_type: typedData.question_type as "multiple_choice" | "true_false" | "open_ended",
+        options: Array.isArray(typedData.options) ? (typedData.options as string[]) : (typedData.options ? JSON.parse(typedData.options as string) : []),
         correct_answer: typedData.correct_answer,
+        expected_answer: typedData.expected_answer ?? null,
         explanation: typedData.explanation,
         order_index: typedData.order_index,
       };

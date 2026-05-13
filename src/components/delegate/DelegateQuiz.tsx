@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle, ChevronRight, RotateCcw, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useQuizData } from "@/hooks/useQuizData";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function DelegateQuiz() {
   const { config, questions, loading, checkAnswer } = useQuizData();
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [openText, setOpenText] = useState("");
+  const [openResponses, setOpenResponses] = useState<{ question_id: string; question: string; answer: string }[]>([]);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
@@ -56,6 +62,7 @@ export function DelegateQuiz() {
   }
 
   const currentQuestion = questions[currentIndex];
+  const isOpenEnded = currentQuestion?.question_type === "open_ended";
 
   const handleSelect = (optionIndex: number) => {
     if (hasAnswered) return;
@@ -63,8 +70,18 @@ export function DelegateQuiz() {
   };
 
   const handleSubmit = async () => {
+    if (isOpenEnded) {
+      if (!openText.trim()) return;
+      setOpenResponses((prev) => [
+        ...prev,
+        { question_id: currentQuestion.id, question: currentQuestion.question, answer: openText.trim() },
+      ]);
+      setHasAnswered(true);
+      setIsCorrect(null);
+      return;
+    }
     if (selectedOption === null) return;
-    
+
     setChecking(true);
     try {
       // Use secure RPC to check answer without exposing correct answer client-side
@@ -86,13 +103,34 @@ export function DelegateQuiz() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedOption(null);
+      setOpenText("");
       setHasAnswered(false);
       setIsCorrect(null);
     } else {
+      // Persist results
+      if (user && config) {
+        try {
+          const autoGradable = questions.filter((q) => q.question_type !== "open_ended").length;
+          const percentage = autoGradable > 0 ? Math.round((score / autoGradable) * 100) : 0;
+          const hasOpen = openResponses.length > 0;
+          await supabase.from("quiz_results").insert({
+            user_id: user.id,
+            config_id: config.id,
+            score,
+            total_questions: questions.length,
+            answers: [],
+            open_responses: openResponses,
+            pending_review: hasOpen,
+            passed: !hasOpen && percentage >= config.passing_score,
+          } as never);
+        } catch (e) {
+          console.error("Failed to save quiz result:", e);
+        }
+      }
       setCompleted(true);
     }
   };
@@ -101,6 +139,8 @@ export function DelegateQuiz() {
     if (!config.allow_retakes) return;
     setCurrentIndex(0);
     setSelectedOption(null);
+    setOpenText("");
+    setOpenResponses([]);
     setHasAnswered(false);
     setIsCorrect(null);
     setScore(0);
@@ -187,7 +227,20 @@ export function DelegateQuiz() {
         </div>
 
         <div className="p-6 space-y-3">
-          {currentQuestion.options.map((option, index) => {
+          {isOpenEnded ? (
+            <div className="space-y-2">
+              <Textarea
+                value={openText}
+                onChange={(e) => setOpenText(e.target.value)}
+                disabled={hasAnswered}
+                placeholder="Type your answer here..."
+                rows={6}
+              />
+              <p className="text-xs text-muted-foreground">
+                Open-ended responses are submitted for the chair's manual review.
+              </p>
+            </div>
+          ) : currentQuestion.options.map((option, index) => {
             const isSelected = selectedOption === index;
             const showCorrect = hasAnswered && isCorrect && isSelected;
             const showWrong = hasAnswered && !isCorrect && isSelected;
@@ -228,7 +281,7 @@ export function DelegateQuiz() {
         </div>
 
         {/* Explanation - Only show if answer was correct and explanation exists */}
-        {hasAnswered && isCorrect && currentQuestion.explanation && (
+        {hasAnswered && !isOpenEnded && isCorrect && currentQuestion.explanation && (
           <div className="p-6 border-t border-border bg-accent animate-fade-in">
             <p className="text-sm">
               <span className="font-medium text-secondary">Explanation: </span>
@@ -240,7 +293,7 @@ export function DelegateQuiz() {
         )}
 
         {/* Feedback for wrong answer */}
-        {hasAnswered && !isCorrect && (
+        {hasAnswered && !isOpenEnded && !isCorrect && (
           <div className="p-6 border-t border-border bg-destructive/5 animate-fade-in">
             <p className="text-sm text-destructive">
               That's not correct. Try to remember this for the retake!
@@ -248,14 +301,25 @@ export function DelegateQuiz() {
           </div>
         )}
 
+        {hasAnswered && isOpenEnded && (
+          <div className="p-6 border-t border-border bg-accent animate-fade-in">
+            <p className="text-sm text-muted-foreground">
+              Your response has been recorded and will be reviewed by the chair.
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="p-6 border-t border-border flex justify-end gap-3">
           {!hasAnswered ? (
-            <Button onClick={handleSubmit} disabled={selectedOption === null || checking}>
+            <Button
+              onClick={handleSubmit}
+              disabled={(isOpenEnded ? !openText.trim() : selectedOption === null) || checking}
+            >
               {checking ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Submit Answer
+              {isOpenEnded ? "Submit Response" : "Submit Answer"}
             </Button>
           ) : (
             <Button onClick={handleNext} className="gap-2">

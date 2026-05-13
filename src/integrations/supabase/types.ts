@@ -363,8 +363,9 @@ export type Database = {
       quiz_questions: {
         Row: {
           config_id: string
-          correct_answer: number
+          correct_answer: number | null
           created_at: string
+          expected_answer: string | null
           explanation: string | null
           id: string
           options: Json
@@ -374,8 +375,9 @@ export type Database = {
         }
         Insert: {
           config_id: string
-          correct_answer?: number
+          correct_answer?: number | null
           created_at?: string
+          expected_answer?: string | null
           explanation?: string | null
           id?: string
           options?: Json
@@ -385,8 +387,9 @@ export type Database = {
         }
         Update: {
           config_id?: string
-          correct_answer?: number
+          correct_answer?: number | null
           created_at?: string
+          expected_answer?: string | null
           explanation?: string | null
           id?: string
           options?: Json
@@ -411,7 +414,12 @@ export type Database = {
           config_id: string
           created_at: string
           id: string
+          manual_score: number | null
+          open_responses: Json
           passed: boolean
+          pending_review: boolean
+          reviewed_at: string | null
+          reviewer_feedback: string | null
           score: number
           total_questions: number
           user_id: string
@@ -422,7 +430,12 @@ export type Database = {
           config_id: string
           created_at?: string
           id?: string
+          manual_score?: number | null
+          open_responses?: Json
           passed: boolean
+          pending_review?: boolean
+          reviewed_at?: string | null
+          reviewer_feedback?: string | null
           score: number
           total_questions: number
           user_id: string
@@ -433,7 +446,12 @@ export type Database = {
           config_id?: string
           created_at?: string
           id?: string
+          manual_score?: number | null
+          open_responses?: Json
           passed?: boolean
+          pending_review?: boolean
+          reviewed_at?: string | null
+          reviewer_feedback?: string | null
           score?: number
           total_questions?: number
           user_id?: string

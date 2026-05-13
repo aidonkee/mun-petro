@@ -33,18 +33,22 @@ export function QuizSettings() {
 
   const [newQuestion, setNewQuestion] = useState({
     question: "",
-    type: "multiple_choice" as "multiple_choice" | "true_false",
+    type: "multiple_choice" as "multiple_choice" | "true_false" | "open_ended",
     options: ["", "", "", ""],
     correctAnswer: 0,
+    expectedAnswer: "",
     explanation: "",
   });
 
   const handleAddQuestion = async () => {
     if (!newQuestion.question.trim()) return;
 
-    const validOptions = newQuestion.type === "true_false"
-      ? ["True", "False"]
-      : newQuestion.options.filter((o) => o.trim());
+    const validOptions =
+      newQuestion.type === "true_false"
+        ? ["True", "False"]
+        : newQuestion.type === "open_ended"
+        ? []
+        : newQuestion.options.filter((o) => o.trim());
 
     if (newQuestion.type === "multiple_choice" && validOptions.length < 2) return;
 
@@ -53,25 +57,30 @@ export function QuizSettings() {
       question_type: newQuestion.type,
       options: validOptions,
       correct_answer: newQuestion.correctAnswer,
+      expected_answer: newQuestion.type === "open_ended" ? newQuestion.expectedAnswer : null,
       explanation: newQuestion.explanation || null,
     });
 
-    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0, explanation: "" });
+    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0, expectedAnswer: "", explanation: "" });
     setIsAddDialogOpen(false);
   };
 
   const handleEditQuestion = async () => {
     if (!editingQuestion) return;
 
-    const validOptions = editingQuestion.question_type === "true_false"
-      ? ["True", "False"]
-      : editingQuestion.options.filter((o) => o.trim());
+    const validOptions =
+      editingQuestion.question_type === "true_false"
+        ? ["True", "False"]
+        : editingQuestion.question_type === "open_ended"
+        ? []
+        : editingQuestion.options.filter((o) => o.trim());
 
     await updateQuestion(editingQuestion.id, {
       question: editingQuestion.question,
       question_type: editingQuestion.question_type,
       options: validOptions,
       correct_answer: editingQuestion.correct_answer,
+      expected_answer: editingQuestion.expected_answer ?? null,
       explanation: editingQuestion.explanation,
     });
 
@@ -148,11 +157,16 @@ export function QuizSettings() {
                 <Label>Question Type</Label>
                 <Select
                   value={newQuestion.type}
-                  onValueChange={(value: "multiple_choice" | "true_false") => {
+                  onValueChange={(value: "multiple_choice" | "true_false" | "open_ended") => {
                     setNewQuestion({
                       ...newQuestion,
                       type: value,
-                      options: value === "true_false" ? ["True", "False"] : ["", "", "", ""],
+                      options:
+                        value === "true_false"
+                          ? ["True", "False"]
+                          : value === "open_ended"
+                          ? []
+                          : ["", "", "", ""],
                       correctAnswer: 0,
                     });
                   }}
@@ -163,6 +177,7 @@ export function QuizSettings() {
                   <SelectContent>
                     <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                     <SelectItem value="true_false">True / False</SelectItem>
+                    <SelectItem value="open_ended">Open-Ended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -217,6 +232,22 @@ export function QuizSettings() {
                       False
                     </label>
                   </div>
+                </div>
+              )}
+
+              {newQuestion.type === "open_ended" && (
+                <div className="space-y-2">
+                  <Label>Reference Answer (for grading)</Label>
+                  <Textarea
+                    value={newQuestion.expectedAnswer}
+                    onChange={(e) => setNewQuestion({ ...newQuestion, expectedAnswer: e.target.value })}
+                    placeholder="Sample answer or grading rubric. Delegates' answers will be reviewed by you manually."
+                    className="mt-1"
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Open-ended responses cannot be auto-graded. They will appear in Grading for manual review.
+                  </p>
                 </div>
               )}
 
@@ -369,7 +400,11 @@ export function QuizSettings() {
                     <p className="font-medium">{q.question}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="badge-primary">
-                        {q.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}
+                        {q.question_type === "multiple_choice"
+                          ? "Multiple Choice"
+                          : q.question_type === "true_false"
+                          ? "True/False"
+                          : "Open-Ended"}
                       </span>
                     </div>
                   </div>
@@ -426,18 +461,31 @@ export function QuizSettings() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Type</Label>
-                <p className="mt-1">{viewingQuestion.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}</p>
+                <p className="mt-1">
+                  {viewingQuestion.question_type === "multiple_choice"
+                    ? "Multiple Choice"
+                    : viewingQuestion.question_type === "true_false"
+                    ? "True/False"
+                    : "Open-Ended"}
+                </p>
               </div>
-              <div>
-                <Label className="text-muted-foreground">Options</Label>
-                <ul className="mt-1 space-y-1">
-                  {viewingQuestion.options.map((opt, idx) => (
-                    <li key={idx} className={idx === viewingQuestion.correct_answer ? "text-success font-medium" : ""}>
-                      {String.fromCharCode(65 + idx)}. {opt} {idx === viewingQuestion.correct_answer && "✓"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {viewingQuestion.question_type !== "open_ended" ? (
+                <div>
+                  <Label className="text-muted-foreground">Options</Label>
+                  <ul className="mt-1 space-y-1">
+                    {viewingQuestion.options.map((opt, idx) => (
+                      <li key={idx} className={idx === viewingQuestion.correct_answer ? "text-success font-medium" : ""}>
+                        {String.fromCharCode(65 + idx)}. {opt} {idx === viewingQuestion.correct_answer && "✓"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-muted-foreground">Reference Answer</Label>
+                  <p className="mt-1 text-sm whitespace-pre-wrap">{viewingQuestion.expected_answer || "—"}</p>
+                </div>
+              )}
               {viewingQuestion.explanation && (
                 <div>
                   <Label className="text-muted-foreground">Explanation</Label>
@@ -469,11 +517,16 @@ export function QuizSettings() {
                 <Label>Question Type</Label>
                 <Select
                   value={editingQuestion.question_type}
-                  onValueChange={(value: "multiple_choice" | "true_false") => {
+                  onValueChange={(value: "multiple_choice" | "true_false" | "open_ended") => {
                     setEditingQuestion({
                       ...editingQuestion,
                       question_type: value,
-                      options: value === "true_false" ? ["True", "False"] : editingQuestion.options,
+                      options:
+                        value === "true_false"
+                          ? ["True", "False"]
+                          : value === "open_ended"
+                          ? []
+                          : editingQuestion.options.length ? editingQuestion.options : ["", "", "", ""],
                       correct_answer: 0,
                     });
                   }}
@@ -484,6 +537,7 @@ export function QuizSettings() {
                   <SelectContent>
                     <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                     <SelectItem value="true_false">True / False</SelectItem>
+                    <SelectItem value="open_ended">Open-Ended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -537,6 +591,18 @@ export function QuizSettings() {
                       False
                     </label>
                   </div>
+                </div>
+              )}
+
+              {editingQuestion.question_type === "open_ended" && (
+                <div className="space-y-2">
+                  <Label>Reference Answer</Label>
+                  <Textarea
+                    value={editingQuestion.expected_answer || ""}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, expected_answer: e.target.value })}
+                    placeholder="Sample answer / rubric for grading"
+                    rows={3}
+                  />
                 </div>
               )}
 
