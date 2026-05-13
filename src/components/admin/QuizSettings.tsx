@@ -400,7 +400,11 @@ export function QuizSettings() {
                     <p className="font-medium">{q.question}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="badge-primary">
-                        {q.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}
+                        {q.question_type === "multiple_choice"
+                          ? "Multiple Choice"
+                          : q.question_type === "true_false"
+                          ? "True/False"
+                          : "Open-Ended"}
                       </span>
                     </div>
                   </div>
@@ -457,18 +461,31 @@ export function QuizSettings() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Type</Label>
-                <p className="mt-1">{viewingQuestion.question_type === "multiple_choice" ? "Multiple Choice" : "True/False"}</p>
+                <p className="mt-1">
+                  {viewingQuestion.question_type === "multiple_choice"
+                    ? "Multiple Choice"
+                    : viewingQuestion.question_type === "true_false"
+                    ? "True/False"
+                    : "Open-Ended"}
+                </p>
               </div>
-              <div>
-                <Label className="text-muted-foreground">Options</Label>
-                <ul className="mt-1 space-y-1">
-                  {viewingQuestion.options.map((opt, idx) => (
-                    <li key={idx} className={idx === viewingQuestion.correct_answer ? "text-success font-medium" : ""}>
-                      {String.fromCharCode(65 + idx)}. {opt} {idx === viewingQuestion.correct_answer && "✓"}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {viewingQuestion.question_type !== "open_ended" ? (
+                <div>
+                  <Label className="text-muted-foreground">Options</Label>
+                  <ul className="mt-1 space-y-1">
+                    {viewingQuestion.options.map((opt, idx) => (
+                      <li key={idx} className={idx === viewingQuestion.correct_answer ? "text-success font-medium" : ""}>
+                        {String.fromCharCode(65 + idx)}. {opt} {idx === viewingQuestion.correct_answer && "✓"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-muted-foreground">Reference Answer</Label>
+                  <p className="mt-1 text-sm whitespace-pre-wrap">{viewingQuestion.expected_answer || "—"}</p>
+                </div>
+              )}
               {viewingQuestion.explanation && (
                 <div>
                   <Label className="text-muted-foreground">Explanation</Label>
