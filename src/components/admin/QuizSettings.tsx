@@ -157,11 +157,16 @@ export function QuizSettings() {
                 <Label>Question Type</Label>
                 <Select
                   value={newQuestion.type}
-                  onValueChange={(value: "multiple_choice" | "true_false") => {
+                  onValueChange={(value: "multiple_choice" | "true_false" | "open_ended") => {
                     setNewQuestion({
                       ...newQuestion,
                       type: value,
-                      options: value === "true_false" ? ["True", "False"] : ["", "", "", ""],
+                      options:
+                        value === "true_false"
+                          ? ["True", "False"]
+                          : value === "open_ended"
+                          ? []
+                          : ["", "", "", ""],
                       correctAnswer: 0,
                     });
                   }}
@@ -172,6 +177,7 @@ export function QuizSettings() {
                   <SelectContent>
                     <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                     <SelectItem value="true_false">True / False</SelectItem>
+                    <SelectItem value="open_ended">Open-Ended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -226,6 +232,22 @@ export function QuizSettings() {
                       False
                     </label>
                   </div>
+                </div>
+              )}
+
+              {newQuestion.type === "open_ended" && (
+                <div className="space-y-2">
+                  <Label>Reference Answer (for grading)</Label>
+                  <Textarea
+                    value={newQuestion.expectedAnswer}
+                    onChange={(e) => setNewQuestion({ ...newQuestion, expectedAnswer: e.target.value })}
+                    placeholder="Sample answer or grading rubric. Delegates' answers will be reviewed by you manually."
+                    className="mt-1"
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Open-ended responses cannot be auto-graded. They will appear in Grading for manual review.
+                  </p>
                 </div>
               )}
 
