@@ -33,18 +33,22 @@ export function QuizSettings() {
 
   const [newQuestion, setNewQuestion] = useState({
     question: "",
-    type: "multiple_choice" as "multiple_choice" | "true_false",
+    type: "multiple_choice" as "multiple_choice" | "true_false" | "open_ended",
     options: ["", "", "", ""],
     correctAnswer: 0,
+    expectedAnswer: "",
     explanation: "",
   });
 
   const handleAddQuestion = async () => {
     if (!newQuestion.question.trim()) return;
 
-    const validOptions = newQuestion.type === "true_false"
-      ? ["True", "False"]
-      : newQuestion.options.filter((o) => o.trim());
+    const validOptions =
+      newQuestion.type === "true_false"
+        ? ["True", "False"]
+        : newQuestion.type === "open_ended"
+        ? []
+        : newQuestion.options.filter((o) => o.trim());
 
     if (newQuestion.type === "multiple_choice" && validOptions.length < 2) return;
 
@@ -53,25 +57,30 @@ export function QuizSettings() {
       question_type: newQuestion.type,
       options: validOptions,
       correct_answer: newQuestion.correctAnswer,
+      expected_answer: newQuestion.type === "open_ended" ? newQuestion.expectedAnswer : null,
       explanation: newQuestion.explanation || null,
     });
 
-    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0, explanation: "" });
+    setNewQuestion({ question: "", type: "multiple_choice", options: ["", "", "", ""], correctAnswer: 0, expectedAnswer: "", explanation: "" });
     setIsAddDialogOpen(false);
   };
 
   const handleEditQuestion = async () => {
     if (!editingQuestion) return;
 
-    const validOptions = editingQuestion.question_type === "true_false"
-      ? ["True", "False"]
-      : editingQuestion.options.filter((o) => o.trim());
+    const validOptions =
+      editingQuestion.question_type === "true_false"
+        ? ["True", "False"]
+        : editingQuestion.question_type === "open_ended"
+        ? []
+        : editingQuestion.options.filter((o) => o.trim());
 
     await updateQuestion(editingQuestion.id, {
       question: editingQuestion.question,
       question_type: editingQuestion.question_type,
       options: validOptions,
       correct_answer: editingQuestion.correct_answer,
+      expected_answer: editingQuestion.expected_answer ?? null,
       explanation: editingQuestion.explanation,
     });
 
