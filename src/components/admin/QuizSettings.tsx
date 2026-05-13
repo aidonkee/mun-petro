@@ -500,11 +500,16 @@ export function QuizSettings() {
                 <Label>Question Type</Label>
                 <Select
                   value={editingQuestion.question_type}
-                  onValueChange={(value: "multiple_choice" | "true_false") => {
+                  onValueChange={(value: "multiple_choice" | "true_false" | "open_ended") => {
                     setEditingQuestion({
                       ...editingQuestion,
                       question_type: value,
-                      options: value === "true_false" ? ["True", "False"] : editingQuestion.options,
+                      options:
+                        value === "true_false"
+                          ? ["True", "False"]
+                          : value === "open_ended"
+                          ? []
+                          : editingQuestion.options.length ? editingQuestion.options : ["", "", "", ""],
                       correct_answer: 0,
                     });
                   }}
@@ -515,6 +520,7 @@ export function QuizSettings() {
                   <SelectContent>
                     <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
                     <SelectItem value="true_false">True / False</SelectItem>
+                    <SelectItem value="open_ended">Open-Ended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -568,6 +574,18 @@ export function QuizSettings() {
                       False
                     </label>
                   </div>
+                </div>
+              )}
+
+              {editingQuestion.question_type === "open_ended" && (
+                <div className="space-y-2">
+                  <Label>Reference Answer</Label>
+                  <Textarea
+                    value={editingQuestion.expected_answer || ""}
+                    onChange={(e) => setEditingQuestion({ ...editingQuestion, expected_answer: e.target.value })}
+                    placeholder="Sample answer / rubric for grading"
+                    rows={3}
+                  />
                 </div>
               )}
 
